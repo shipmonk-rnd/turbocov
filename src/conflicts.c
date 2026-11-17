@@ -26,7 +26,7 @@ static const char *tc_find_opcache_conflict(void)
 	bool is_cli = strcmp(sapi_module.name, "cli") == 0 || strcmp(sapi_module.name, "phpdbg") == 0;
 	const char *value;
 
-	if (!INI_BOOL("opcache.enable") || (strcmp(sapi_module.name, "cli") == 0 && !INI_BOOL("opcache.enable_cli"))) {
+	if (!zend_ini_bool_literal("opcache.enable") || (strcmp(sapi_module.name, "cli") == 0 && !zend_ini_bool_literal("opcache.enable_cli"))) {
 		return NULL;
 	}
 
@@ -34,32 +34,32 @@ static const char *tc_find_opcache_conflict(void)
 		return "OPcache shares the compiled code between the processes of this SAPI";
 	}
 
-	if (INI_BOOL("opcache.protect_memory")) {
+	if (zend_ini_bool_literal("opcache.protect_memory")) {
 		return "opcache.protect_memory makes the compiled code read-only";
 	}
 
-	value = INI_STR("opcache.file_cache");
+	value = zend_ini_string_literal("opcache.file_cache");
 
 	if (value && *value) {
 		return "opcache.file_cache stores the compiled code for other processes";
 	}
 
-	value = INI_STR("opcache.jit");
+	value = zend_ini_string_literal("opcache.jit");
 
-	if (value && *value && INI_INT("opcache.jit_buffer_size") > 0
+	if (value && *value && zend_ini_long_literal("opcache.jit_buffer_size") > 0
 		&& strcmp(value, "disable") != 0 && strcmp(value, "off") != 0 && strcmp(value, "0") != 0) {
 		return "the JIT of OPcache is on";
 	}
 
 	/* OPcache compiles the preloaded code before the first request, thus before turbocov has its hooks. */
-	value = INI_STR("opcache.preload");
+	value = zend_ini_string_literal("opcache.preload");
 
 	if (value && *value) {
 		return "opcache.preload is set. Code that OPcache preloads gets no probes";
 	}
 
 	/* The optimizer removes code. A line without code has no probe, and the report shows it as not covered. */
-	if (INI_INT("opcache.optimization_level") != 0) {
+	if (zend_ini_long_literal("opcache.optimization_level") != 0) {
 		return "the optimizer of OPcache is on. Set opcache.optimization_level=0";
 	}
 

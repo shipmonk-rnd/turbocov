@@ -159,7 +159,7 @@ static bool tc_paths_load(tc_paths *paths, const char *setting, const char *valu
 
 static void tc_setup_paths(void)
 {
-	const char *collect = INI_STR(TC_INI_COLLECT_PATHS);
+	const char *collect = zend_ini_string_literal(TC_INI_COLLECT_PATHS);
 
 	tc_paths_init(&tc_collect_paths);
 	tc_paths_init(&tc_exclude_paths);
@@ -175,13 +175,13 @@ static void tc_setup_paths(void)
 	}
 
 #ifdef TC_INI_EXCLUDE_PATHS
-	tc_paths_load(&tc_exclude_paths, TC_INI_EXCLUDE_PATHS, INI_STR(TC_INI_EXCLUDE_PATHS));
+	tc_paths_load(&tc_exclude_paths, TC_INI_EXCLUDE_PATHS, zend_ini_string_literal(TC_INI_EXCLUDE_PATHS));
 #endif
 }
 
 static void tc_setup_exclude_pattern(void)
 {
-	const char *exclude = INI_STR(TC_INI_EXCLUDE_PATTERN);
+	const char *exclude = zend_ini_string_literal(TC_INI_EXCLUDE_PATTERN);
 	zend_string *pattern;
 	int error_reporting = EG(error_reporting);
 
