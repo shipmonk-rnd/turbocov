@@ -18,7 +18,7 @@ check=""
 # name|repository|commit or tag|source directory
 suites="
 dead-code-detector|https://github.com/shipmonk-rnd/dead-code-detector|ae624a696b5c835650b250c85928ae943c1ecb77|src
-carbon|https://github.com/briannesbitt/Carbon|3.15.1|src/Carbon
+carbon|https://github.com/briannesbitt/Carbon|c997755458213c6e74e90637fec095e6cc47093d|src/Carbon
 commonmark|https://github.com/thephpleague/commonmark|2.10.7|src
 "
 
