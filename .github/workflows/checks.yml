@@ -88,6 +88,88 @@ jobs:
                     # PCOV and Xdebug are not in this PHP build
                     EXPECT_SKIPS: 2
 
+    php-86:
+        name: PHP 8.6 built with ${{ matrix.name }}
+        runs-on: ubuntu-latest
+        container: debian:trixie
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    -
+                        name: GCC
+                        id: gcc
+                        compiler: gcc
+                        packages: gcc libc6-dev
+                    -
+                        name: Clang
+                        id: clang
+                        compiler: clang
+                        packages: clang
+                    -
+                        name: GCC, debug build with AddressSanitizer
+                        id: gcc-debug-asan
+                        compiler: gcc
+                        packages: gcc libc6-dev
+                        configure: --enable-debug --enable-address-sanitizer
+                        # PHP with AddressSanitizer has a different zend_arena. An extension must have the same define.
+                        cflags: -fsanitize=address -fno-omit-frame-pointer -DZEND_TRACK_ARENA_ALLOC
+                        ldflags: -fsanitize=address
+        env:
+            # The official images of PHP 8.6 are thread-safe builds, which turbocov does not support.
+            # For a final release, change the version and the checksum, and remove PHP_URL.
+            PHP_VERSION: 8.6.0RC7
+            PHP_SHA256: 63dba3b693d2f2689f12d5264d212d7b813acfd56fb375c620d04e1eef4bb00a
+            PHP_URL: https://downloads.php.net/~svpernova09/php-8.6.0RC7.tar.xz
+            CC: ${{ matrix.compiler }}
+            # turbocov does not free its tables at the end of the process. A later change does that.
+            ASAN_OPTIONS: detect_leaks=0
+        steps:
+            -
+                name: Install build tools
+                run: |
+                    apt-get update -qq
+                    apt-get install -y -qq --no-install-recommends ${{ matrix.packages }} make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
+            -
+                name: Checkout code
+                uses: actions/checkout@v6
+            -
+                name: Cache PHP
+                id: cache-php
+                uses: actions/cache@v5
+                with:
+                    path: /opt/php
+                    key: php-${{ env.PHP_VERSION }}-${{ matrix.id }}-${{ hashFiles('dev/build-php.sh') }}
+            -
+                name: Build PHP
+                if: steps.cache-php.outputs.cache-hit != 'true'
+                run: dev/build-php.sh "$PHP_VERSION" "$PHP_SHA256" /opt/php ${{ matrix.configure }}
+            -
+                name: Build and test
+                run: |
+                    export PATH="/opt/php/bin:$PATH"
+                    $CC --version
+                    php -v
+                    php -r 'echo ZEND_VM_KIND, PHP_EOL;'
+                    # PCOV and Xdebug are not in this PHP build
+                    EXPECT_SKIPS=2 dev/build-in-place.sh turbocov
+                    dev/build-in-place.sh pcov
+                env:
+                    CFLAGS: ${{ matrix.cflags }}
+                    LDFLAGS: ${{ matrix.ldflags }}
+            -
+                # --asan turns the memory manager of PHP off, so AddressSanitizer sees each allocation.
+                name: Test without the memory manager of PHP
+                if: matrix.cflags
+                run: |
+                    export PATH="/opt/php/bin:$PATH"
+                    EXPECT_SKIPS=2 dev/build-in-place.sh turbocov
+                    dev/build-in-place.sh pcov
+                env:
+                    CFLAGS: ${{ matrix.cflags }}
+                    LDFLAGS: ${{ matrix.ldflags }}
+                    RUN_TESTS_FLAGS: --asan
+
     sanitizers:
         name: PHP ${{ matrix.php-version }} debug build with AddressSanitizer, ${{ matrix.build }}${{ matrix.arch == 'arm64' && ', arm64' || '' }}
         runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
