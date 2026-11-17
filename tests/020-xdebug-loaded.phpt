@@ -2,14 +2,8 @@
 With Xdebug loaded ensure_can_collect() and start() throw an exception
 --EXTENSIONS--
 turbocov
---SKIPIF--
-<?php
-if (!extension_loaded('xdebug')) {
-    die('skip Xdebug is not available');
-}
-?>
+xdebug
 --INI--
-zend_extension=xdebug
 xdebug.mode=off
 turbocov.collect_paths={PWD}/fixtures
 --FILE--

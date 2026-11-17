@@ -88,13 +88,14 @@ jobs:
                         php-version: 8.5.12
                         sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
         env:
-            CC: clang
+            # Clang cannot build the tail-call VM of PHP 8.5 with AddressSanitizer.
+            CC: gcc
         steps:
             -
                 name: Install build tools
                 run: |
                     apt-get update -qq
-                    apt-get install -y -qq --no-install-recommends clang libclang-rt-dev llvm make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
+                    apt-get install -y -qq --no-install-recommends gcc libc6-dev make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
             -
                 name: Checkout code
                 uses: actions/checkout@v6
@@ -104,7 +105,7 @@ jobs:
                 uses: actions/cache@v5
                 with:
                     path: /opt/php
-                    key: php-${{ matrix.php-version }}-clang-debug-asan-${{ hashFiles('dev/build-php.sh') }}
+                    key: php-${{ matrix.php-version }}-gcc-debug-asan-${{ hashFiles('dev/build-php.sh') }}
             -
                 name: Build PHP
                 if: steps.cache-php.outputs.cache-hit != 'true'
