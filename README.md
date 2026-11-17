@@ -5,7 +5,7 @@ Coverage engine for PHP at near-native speed! 400× less driver overhead than Xd
 turbocov collects line coverage. A line costs time only when it runs for the first time in a test.
 
 - It reports the same line data as [PCOV](https://github.com/krakjoe/pcov), and also the lines of property hooks.
-- Files that are not in its path list have no cost at run time.
+- Files that are not in its path list have no cost at run time. They have no probes, and their `switch` and `match` statements keep their jump tables.
 - [shipmonk/turbocov-phpunit](https://github.com/shipmonk-rnd/turbocov-phpunit) connects it to PHPUnit.
 
 Status: experimental. Read [Limits](#limits) before you use it.

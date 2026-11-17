@@ -5,6 +5,7 @@ bool tc_installed;
 HashTable tc_files;
 HashTable tc_units;
 zend_ulong tc_stat_probes;
+zend_ulong tc_stat_jump_table_files;
 
 static zend_ulong tc_ignored_opcodes[256 / ZEND_BITSET_ELM_SIZE];
 
@@ -247,11 +248,54 @@ static void tc_after_compile(zend_op_array *main_op_array, uint32_t first_functi
 	}
 }
 
+/*
+ * A file that is not selected can keep its jump tables, so its switch and match statements run at full speed.
+ * The decision must be made before PHP compiles the file. The name of the compiled file is the resolved path.
+ * If the path cannot be resolved, the file has no jump tables: a wrong "not selected" loses lines of the report.
+ */
+static bool tc_can_keep_jump_tables(zend_file_handle *file_handle)
+{
+	zend_string *resolved;
+	bool selected;
+
+	if (!tc_active) {
+		return false;
+	}
+
+	if (file_handle->opened_path) {
+		return !tc_paths_select(file_handle->opened_path);
+	}
+
+	if (!file_handle->filename) {
+		return false;
+	}
+
+	resolved = zend_resolve_path(file_handle->filename);
+
+	if (!resolved) {
+		return false;
+	}
+
+	selected = tc_paths_select(resolved);
+	zend_string_release(resolved);
+
+	return !selected;
+}
+
 static zend_op_array *tc_compile_file(zend_file_handle *file_handle, int type)
 {
 	uint32_t first_function = CG(function_table)->nNumUsed;
 	uint32_t first_class = CG(class_table)->nNumUsed;
-	zend_op_array *op_array = tc_orig_compile_file(file_handle, type);
+	uint32_t compiler_options = CG(compiler_options);
+	zend_op_array *op_array;
+
+	if (tc_can_keep_jump_tables(file_handle)) {
+		CG(compiler_options) &= ~ZEND_COMPILE_NO_JUMPTABLES;
+		tc_stat_jump_table_files++;
+	}
+
+	op_array = tc_orig_compile_file(file_handle, type);
+	CG(compiler_options) = compiler_options;
 
 	tc_after_compile(op_array, first_function, first_class);
 
@@ -320,7 +364,10 @@ void tc_compiler_activate(void)
 	zend_hash_init(&tc_files, 256, NULL, tc_files_dtor, 1);
 	zend_hash_init(&tc_units, 256, NULL, NULL, 1);
 
-	/* A switch with a jump table does not run the comparison of each case. PCOV turns jump tables off too. */
+	/*
+	 * A switch with a jump table does not run the comparison of each case. PCOV turns jump tables off too.
+	 * tc_compile_file() turns them on again for a file that is not selected.
+	 */
 	CG(compiler_options) |= ZEND_COMPILE_NO_JUMPTABLES;
 }
 

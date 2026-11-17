@@ -133,6 +133,7 @@ TC_LOCAL extern bool tc_installed;
 TC_LOCAL extern HashTable tc_files; /* file name => tc_file, or NULL for a file outside the whitelist */
 TC_LOCAL extern HashTable tc_units; /* opcodes address => tc_unit */
 TC_LOCAL extern zend_ulong tc_stat_probes;
+TC_LOCAL extern zend_ulong tc_stat_jump_table_files;
 
 TC_LOCAL void tc_fill_ignored_opcodes(void);
 TC_LOCAL void tc_install(void);
