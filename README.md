@@ -24,43 +24,11 @@ turbocov does not replace the instruction loop of PHP. Code without probes runs 
 
 ## Performance
 
-Two measurements show the cost of a coverage driver: a test run with a coverage report, and the driver alone.
+![Time that a coverage driver adds to the test suite of Carbon](performance.svg)
 
-### A test run with a coverage report
+turbocov adds about 30 times less time than PCOV and about 400 times less time than Xdebug.
 
-![Time that a coverage driver adds to a test suite](performance.svg)
-
-The test suite of a PHPStan extension (870 tests, PHPUnit 13.4, PHP 8.5, OPcache off), mean of eight runs:
-
-| Driver | Suite time | Added time |
-|---|---|---|
-| No coverage | 9.9 s | |
-| turbocov | 10.8 s | +1.0 s (+10 %) |
-| PCOV 1.0.12 | 22.2 s | +12.3 s (+125 %) |
-| Xdebug 3.5.3, coverage mode | 53.2 s | +43.4 s (+439 %) |
-
-- turbocov adds about 12 times less time than PCOV and more than 40 times less time than Xdebug.
-- turbocov runs with the driver of [shipmonk/turbocov-phpunit](https://github.com/shipmonk-rnd/turbocov-phpunit). PCOV and Xdebug run with the drivers of PHPUnit.
-- The clover report of turbocov is identical to the report of PCOV. This suite has no property hooks.
-- Most of the time that turbocov adds is the work of the coverage library of PHPUnit. That work is the same with each driver. The next measurement does not have it.
-
-### The driver alone
-
-The benchmark in [benchmark/](benchmark/README.md) starts and stops each driver around each test, with the calls that PHPUnit makes, and without the coverage library of PHPUnit. Time that each driver adds to three test suites, mean of eight rounds:
-
-| Suite | No driver | turbocov | PCOV | Xdebug |
-|---|---|---|---|---|
-| [Carbon](https://github.com/briannesbitt/Carbon), 6,349 tests | 18.7 s | +0.55 s | +18.0 s | +231 s |
-| [dead-code-detector](https://github.com/shipmonk-rnd/dead-code-detector), 870 tests | 9.0 s | +0.16 s | +10.8 s | +37.6 s |
-| [commonmark](https://github.com/thephpleague/commonmark), 4,447 tests | 0.86 s | +0.09 s | +1.2 s | +10.8 s |
-
-- On Carbon, turbocov adds about 30 times less time than PCOV (28 to 40) and about 400 times less time than Xdebug (358 to 510). The first line of this README has these two numbers.
-- On commonmark the ratios are about 14 for PCOV and about 120 for Xdebug.
-- On dead-code-detector the time that turbocov adds is as small as the difference between two runs. The ratio is more than 40 for PCOV and more than 140 for Xdebug, and it is not more exact than that.
-- The ratio is different for each suite. The cost of turbocov is in proportion to the lines that a test touches. The cost of PCOV and Xdebug is in proportion to the instructions that PHP executes.
-- The number of Xdebug on Carbon has a cause in PHPUnit: PHPUnit sets the path filter of Xdebug after it loaded the test classes, so Xdebug returns the data of those files after each test.
-
-`benchmark/run.sh` repeats the measurement. [benchmark/results-2026-11-17.md](benchmark/results-2026-11-17.md) has the full result with the spread of each number.
+The numbers are for the driver alone, without the coverage library of PHPUnit. [benchmark/](benchmark/README.md) has the method, two more test suites and the script that repeats the measurement.
 
 ## Requirements
 

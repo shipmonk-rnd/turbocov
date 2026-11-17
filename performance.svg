@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 196" width="720" height="196" role="img" aria-labelledby="title desc" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
-  <title id="title">Time that a coverage driver adds to a test suite</title>
-  <desc id="desc">A test suite of 870 tests takes 8.7 seconds without coverage. turbocov adds 1.0 second, PCOV adds 12.1 seconds, Xdebug adds 38.8 seconds.</desc>
+  <title id="title">Time that a coverage driver adds to the test suite of Carbon</title>
+  <desc id="desc">The test suite of Carbon has 6,349 tests and takes 18.7 seconds without a coverage driver. turbocov adds 0.55 seconds, PCOV adds 18.0 seconds, Xdebug adds 231 seconds.</desc>
   <style>
     .name { fill: #0b0b0b; font-size: 15px; font-weight: 600; }
     .value { fill: #0b0b0b; font-size: 14px; }
@@ -15,21 +15,21 @@
     }
   </style>
 
-  <text class="note" x="120" y="18">Time added to a test suite that takes 9.9 s without coverage (870 tests, PHP 8.5)</text>
+  <text class="note" x="120" y="18">Time that the driver adds to the test suite of Carbon (6,349 tests, 18.7 s without a driver)</text>
 
   <line class="axis" x1="120" y1="32" x2="120" y2="164"/>
 
   <text class="name" x="108" y="61" text-anchor="end">turbocov</text>
-  <path class="bar" d="M120 44 h6 a4 4 0 0 1 4 4 v16 a4 4 0 0 1 -4 4 h-6 z"/>
-  <text class="value" x="140" y="61">+1.0 s   (+10 %)</text>
+  <path class="bar" d="M120 44 h2 v24 h-2 z"/>
+  <text class="value" x="132" y="61">+0.55 s   (+3 %)</text>
 
   <text class="name" x="108" y="105" text-anchor="end">PCOV</text>
-  <path class="bar" d="M120 88 h124 a4 4 0 0 1 4 4 v16 a4 4 0 0 1 -4 4 h-124 z"/>
-  <text class="value" x="258" y="105">+12.3 s   (+125 %)</text>
+  <path class="bar" d="M120 88 h31 a4 4 0 0 1 4 4 v16 a4 4 0 0 1 -4 4 h-31 z"/>
+  <text class="value" x="165" y="105">+18.0 s   (+96 %)</text>
 
   <text class="name" x="108" y="149" text-anchor="end">Xdebug</text>
   <path class="bar" d="M120 132 h447 a4 4 0 0 1 4 4 v16 a4 4 0 0 1 -4 4 h-447 z"/>
-  <text class="value" x="581" y="149">+43.4 s   (+439 %)</text>
+  <text class="value" x="581" y="149">+231 s   (+1,237 %)</text>
 
-  <text class="note" x="120" y="186">Mean of eight runs. PHPUnit 13.4, PCOV 1.0.12, Xdebug 3.5.3 in coverage mode, OPcache off.</text>
+  <text class="note" x="120" y="186">Driver alone, mean of eight rounds. PHP 8.5, PCOV 1.0.12, Xdebug 3.5.3, OPcache off.</text>
 </svg>

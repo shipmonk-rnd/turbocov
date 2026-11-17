@@ -1,8 +1,8 @@
 # Driver-only benchmark
 
-The performance table in the [main README](../README.md#performance) is an end-to-end measurement. It includes the work of the coverage library of PHPUnit. That work is the same with each driver.
+This benchmark measures the coverage driver alone. It compares turbocov, PCOV and Xdebug. The chart in the [main README](../README.md#performance) shows its result for Carbon.
 
-This benchmark measures the coverage driver alone. It compares turbocov, PCOV and Xdebug.
+A test run with a coverage report also has the work of the coverage library of PHPUnit. That work is the same with each driver, and this benchmark does not have it.
 
 ## What it measures
 
@@ -27,7 +27,7 @@ The time of a run is the time that PHPUnit prints. The added time of a mode is i
 
 ## What it does not measure
 
-- The work of the coverage library: filters, the merge of the data of each test, the reports. The main README has that measurement.
+- The work of the coverage library: filters, the merge of the data of each test, the reports. On dead-code-detector that work is about 0.8 s for each run, more than the time that turbocov adds.
 - The conversion of the line data to objects of the coverage library.
 - Memory.
 - OPcache on.
