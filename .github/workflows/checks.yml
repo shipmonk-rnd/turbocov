@@ -172,31 +172,5 @@ jobs:
                     extensions: pcov, xdebug
                     coverage: none
             -
-                name: Diagnostics (temporary)
-                run: |
-                    sw_vers
-                    which php php-config phpize
-                    php --ini
-                    php -m
-                    php -i | grep -iE "^(Compiler|Architecture|Build System|Build Provider|Configure Command|opcache\.(enable|enable_cli|jit|jit_buffer_size|optimization_level|file_cache|preload|protect_memory)|Thread Safety|Debug Build)" || true
-                    ls "$(php-config --extension-dir)"
-                    php-config --configure-options | tr ' ' '\n' | grep -iE "^(CC|CFLAGS)|clang|gcc" || true
-                    strings "$(php -r 'echo realpath(PHP_BINARY);')" | grep -iE "clang version|GCC: " | sort -u | head || true
-                    cat /opt/homebrew/Cellar/php*/*/INSTALL_RECEIPT.json | grep -oE '"(compiler|built_on|poured_from_bottle|xcode|clt|os_version|arch)": *("[^"]*"|[a-z0-9.]+)' || true
-                    php -i | grep -iE "pcre" || true
-                    which pkg-config && pkg-config --cflags libpcre2-8 || true
-                    cc --version
-            -
                 name: Build and test
                 run: dev/build-in-place.sh turbocov
-            -
-                name: Collect with the ini files of the system (temporary)
-                if: always()
-                run: |
-                    php -d extension="$PWD/modules/turbocov.so" -d turbocov.collect_paths="$PWD/tests/fixtures" -r '
-                        turbocov\ensure_can_collect();
-                        turbocov\start();
-                        require "tests/fixtures/functions.php";
-                        second(2);
-                        var_dump(turbocov\stop(), turbocov\get_status());
-                    '
