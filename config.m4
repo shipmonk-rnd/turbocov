@@ -15,6 +15,13 @@ if test "$PHP_TURBOCOV" != "no"; then
     turbocov_api="src/api_pcov.c"
   fi
 
+  dnl php_pcre.h of a PHP with an external PCRE2 includes "pcre2.h". The compiler does not search the directory of that file on each system.
+  if ! grep -q '^#define HAVE_BUNDLED_PCRE 1' "$phpincludedir/main/php_config.h" 2>/dev/null; then
+    PKG_CHECK_MODULES([PCRE2], [libpcre2-8],
+      [PHP_EVAL_INCLINE([$PCRE2_CFLAGS])],
+      [AC_MSG_WARN([pkg-config does not find libpcre2-8. The compiler must find pcre2.h without help.])])
+  fi
+
   PHP_NEW_EXTENSION([turbocov],
     [src/turbocov.c src/compiler.c src/probes.c src/paths.c src/conflicts.c src/debug.c $turbocov_api],
     [$ext_shared])
