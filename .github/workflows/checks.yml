@@ -1,0 +1,131 @@
+name: Checks
+on:
+    workflow_dispatch:
+    pull_request:
+    push:
+        branches:
+            - "master"
+
+jobs:
+    tests:
+        name: PHP ${{ matrix.php-version }}, ${{ matrix.build }}
+        runs-on: ubuntu-latest
+        container: php:${{ matrix.php-version }}-cli
+        strategy:
+            fail-fast: false
+            matrix:
+                php-version: [ '8.4', '8.5' ]
+                build: [ turbocov, pcov ]
+        steps:
+            -
+                name: Checkout code
+                uses: actions/checkout@v6
+            -
+                # Two tests need these extensions as files. No ini file loads them.
+                name: Install PCOV and Xdebug
+                if: matrix.build == 'turbocov'
+                run: pecl install pcov-1.0.12 xdebug-3.5.3 > /dev/null
+            -
+                name: Build and test
+                run: dev/build-in-place.sh ${{ matrix.build }}
+                env:
+                    EXPECT_NO_SKIPS: ${{ matrix.build == 'turbocov' && '1' || '0' }}
+
+    clang:
+        name: PHP ${{ matrix.php-version }} built with Clang
+        runs-on: ubuntu-latest
+        container: debian:trixie
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    -
+                        php-version: 8.4.27
+                        sha256: dcf93923b0e38e0d5252b25b796520b5a47761a08b3488b6d0b5d1115764d3f0
+                    -
+                        php-version: 8.5.12
+                        sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
+        env:
+            CC: clang
+        steps:
+            -
+                name: Install build tools
+                run: |
+                    apt-get update -qq
+                    apt-get install -y -qq --no-install-recommends clang make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
+            -
+                name: Checkout code
+                uses: actions/checkout@v6
+            -
+                name: Cache PHP
+                id: cache-php
+                uses: actions/cache@v4
+                with:
+                    path: /opt/php
+                    key: php-${{ matrix.php-version }}-clang-${{ hashFiles('dev/build-php.sh') }}
+            -
+                name: Build PHP
+                if: steps.cache-php.outputs.cache-hit != 'true'
+                run: dev/build-php.sh ${{ matrix.php-version }} ${{ matrix.sha256 }} /opt/php
+            -
+                name: Build and test
+                run: |
+                    export PATH="/opt/php/bin:$PATH"
+                    clang --version
+                    php -v
+                    dev/build-in-place.sh turbocov
+
+    sanitizers:
+        name: PHP ${{ matrix.php-version }} debug build with AddressSanitizer, ${{ matrix.build }}
+        runs-on: ubuntu-latest
+        container: debian:trixie
+        strategy:
+            fail-fast: false
+            matrix:
+                build: [ turbocov, pcov ]
+                include:
+                    -
+                        php-version: 8.5.12
+                        sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
+        env:
+            CC: clang
+        steps:
+            -
+                name: Install build tools
+                run: |
+                    apt-get update -qq
+                    apt-get install -y -qq --no-install-recommends clang llvm make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
+            -
+                name: Checkout code
+                uses: actions/checkout@v6
+            -
+                name: Cache PHP
+                id: cache-php
+                uses: actions/cache@v4
+                with:
+                    path: /opt/php
+                    key: php-${{ matrix.php-version }}-clang-debug-asan-${{ hashFiles('dev/build-php.sh') }}
+            -
+                name: Build PHP
+                if: steps.cache-php.outputs.cache-hit != 'true'
+                run: dev/build-php.sh ${{ matrix.php-version }} ${{ matrix.sha256 }} /opt/php --enable-debug --enable-address-sanitizer
+            -
+                # The debug build of PHP reports the memory that the request did not free.
+                name: Build and test
+                run: |
+                    export PATH="/opt/php/bin:$PATH"
+                    php -v
+                    dev/build-in-place.sh ${{ matrix.build }}
+                env:
+                    CFLAGS: -fsanitize=address -fno-omit-frame-pointer
+                    LDFLAGS: -fsanitize=address
+            -
+                # --asan turns the memory manager of PHP off, so AddressSanitizer sees each allocation.
+                name: Test without the memory manager of PHP
+                run: |
+                    export PATH="/opt/php/bin:$PATH"
+                    dev/build-in-place.sh ${{ matrix.build }}
+                env:
+                    CFLAGS: -fsanitize=address -fno-omit-frame-pointer
+                    LDFLAGS: -fsanitize=address
+                    RUN_TESTS_FLAGS: --asan
