@@ -187,6 +187,12 @@ jobs:
                         sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
         steps:
             -
+                # phpize needs autoconf, and the runner does not have it.
+                name: Install build tools
+                run: brew install --quiet autoconf
+                env:
+                    HOMEBREW_NO_AUTO_UPDATE: 1
+            -
                 name: Checkout code
                 uses: actions/checkout@v6
             -
