@@ -216,7 +216,8 @@ static tc_unit *tc_install_probes(zend_op_array *op_array, tc_file *file)
 	memset(&cfg, 0, sizeof(zend_cfg));
 	zend_build_cfg(&arena, op_array, 0, &cfg);
 
-	for (int i = 0; i < cfg.blocks_count; i++) {
+	/* The type of blocks_count is int before PHP 8.6 and uint32_t since PHP 8.6. */
+	for (uint32_t i = 0; i < (uint32_t) cfg.blocks_count; i++) {
 		zend_basic_block *block = &cfg.blocks[i];
 		zend_op *opline = op_array->opcodes + block->start;
 		zend_op *end = opline + block->len;
