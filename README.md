@@ -1,6 +1,6 @@
 # turbocov
 
-Coverage engine for PHP at near-native speed! 40× less overhead than Xdebug, 12× less than PCOV.
+Coverage engine for PHP at near-native speed! 400× less driver overhead than Xdebug, 30× less than PCOV.
 
 turbocov collects line coverage. A line costs time only when it runs for the first time in a test.
 
@@ -54,7 +54,7 @@ The benchmark in [benchmark/](benchmark/README.md) starts and stops each driver 
 | [dead-code-detector](https://github.com/shipmonk-rnd/dead-code-detector), 870 tests | 9.0 s | +0.16 s | +10.8 s | +37.6 s |
 | [commonmark](https://github.com/thephpleague/commonmark), 4,447 tests | 0.86 s | +0.09 s | +1.2 s | +10.8 s |
 
-- On Carbon, turbocov adds about 30 times less time than PCOV (28 to 40) and about 400 times less time than Xdebug.
+- On Carbon, turbocov adds about 30 times less time than PCOV (28 to 40) and about 400 times less time than Xdebug (358 to 510). The first line of this README has these two numbers.
 - On commonmark the ratios are about 14 for PCOV and about 120 for Xdebug.
 - On dead-code-detector the time that turbocov adds is as small as the difference between two runs. The ratio is more than 40 for PCOV and more than 140 for Xdebug, and it is not more exact than that.
 - The ratio is different for each suite. The cost of turbocov is in proportion to the lines that a test touches. The cost of PCOV and Xdebug is in proportion to the instructions that PHP executes.
