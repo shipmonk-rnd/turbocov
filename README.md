@@ -62,22 +62,16 @@ Execution of unlisted files has **zero overhead**!
 | Setting | Default | Description |
 |---|---|---|
 | `turbocov.enabled` | `1` | Set `0` to turn the extension off. It then has no effect at all. |
-| `turbocov.collect_paths` | none | The files and directories that get probes. A directory includes all files below it. |
+| `turbocov.collect_paths` | none | The files and directories that get probes. |
 | `turbocov.exclude_paths` | none | The files and directories that get no probes. |
 | `turbocov.exclude_pattern` | none | A PCRE pattern. Files with a matching path get no probes. |
 
 The two path settings take one of these values:
 
-- A list of paths with `:` between them: `src:config/services.php`.
+- A list of paths with `:` separator: `src:config/services.php`.
 - `@` and the name of a list file: `@changed.txt`. The list file has one path on each line.
 
-Rules:
-
-- A relative path starts at the working directory.
-- A path that does not exist is an error: `start()` throws an exception. A list file with no paths is not an error, and turbocov then collects nothing.
-- A pattern that is not valid is an error too.
-- Without `turbocov.collect_paths` turbocov collects nothing, and `start()` throws an exception.
-- The settings apply when PHP compiles a file. Set them in `php.ini` or with `-d`, not with `ini_set()`.
+The settings apply when PHP compiles a file. Set them in `php.ini` or with `-d`, not with `ini_set()`.
 
 ## How it works
 
