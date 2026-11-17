@@ -114,21 +114,40 @@ turbocov does not replace the instruction loop of PHP. Code without probes runs 
 - `get_executable_lines()` knows only the files that PHP compiled and that are in `turbocov.collect_paths`. Other files are not in the result.
 
 
-## PHPUnit before 13.3 and other tools that only know PCOV
+## Usage with older PHPUnit
 
-These tools select their PCOV driver when an extension with the name `pcov` is loaded. A build option makes turbocov register with that name:
+**The problem:** PHPUnit before 13.3 cannot load a custom coverage driver. It only knows PCOV and Xdebug.
+
+**The solution:** install turbocov in a mode where it pretends to be PCOV. PHPUnit then uses it without any change:
 
 ```sh
-./configure --enable-turbocov --enable-turbocov-impersonate-pcov
+pie install shipmonk/turbocov --enable-turbocov-impersonate-pcov
 ```
 
-PHPUnit and other tools that support PCOV then work without a change. This build is a temporary aid, and a later version can remove it.
+Then run PHPUnit the same way as with PCOV:
 
-- The functions are the functions of PCOV: `\pcov\start()`, `stop()`, `waiting()`, `collect()`, `clear()` and `memory()`. The functions of the section above do not exist in this build.
+```sh
+php -d pcov.directory=src vendor/bin/phpunit --coverage-html coverage
+```
+
+Good to know:
+
+- You do not need `shipmonk/turbocov-phpunit` or the `driver` attribute in `phpunit.xml`.
+- Remove the real PCOV first. Both cannot be loaded at the same time.
+- `pcov.directory` is required. turbocov does not guess `src` like PCOV does.
+- PIE warns that it cannot detect the extension after the install. That is expected, because PHP now lists it as `pcov`. Check it with `php -m | grep pcov`, and add `extension=turbocov` to your `php.ini` if it is missing.
+- This mode also works for other tools that only know PCOV.
+
+<details>
+<summary>Details for the curious</summary>
+
+- The functions are the functions of PCOV: `\pcov\start()`, `stop()`, `waiting()`, `collect()`, `clear()` and `memory()`. The functions of the [Functions](#functions) section do not exist in this mode.
 - The settings are `pcov.enabled`, `pcov.directory` (as `turbocov.collect_paths`) and `pcov.exclude` (as `turbocov.exclude_pattern`).
-- `pcov.directory` has no default. PCOV uses `src`, `lib` or `app` when the setting is empty; turbocov collects nothing.
 - `\pcov\start()` does not throw an exception. It gives a warning when turbocov cannot collect coverage.
-- Do not load the real PCOV at the same time.
+- To build from source: `./configure --enable-turbocov --enable-turbocov-impersonate-pcov`.
+- This mode is a temporary aid, and a later version can remove it.
+
+</details>
 
 ## Limits
 
