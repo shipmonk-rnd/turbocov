@@ -28,8 +28,6 @@ jobs:
             -
                 name: Build and test
                 run: dev/build-in-place.sh ${{ matrix.build }}
-                env:
-                    EXPECT_NO_SKIPS: ${{ matrix.build == 'turbocov' && '1' || '0' }}
 
     clang:
         name: PHP ${{ matrix.php-version }} built with Clang
@@ -74,6 +72,9 @@ jobs:
                     clang --version
                     php -v
                     dev/build-in-place.sh turbocov
+                env:
+                    # PCOV and Xdebug are not in this PHP build
+                    EXPECT_SKIPS: 2
 
     sanitizers:
         name: PHP ${{ matrix.php-version }} debug build with AddressSanitizer, ${{ matrix.build }}
@@ -120,6 +121,8 @@ jobs:
                 env:
                     CFLAGS: -fsanitize=address -fno-omit-frame-pointer
                     LDFLAGS: -fsanitize=address
+                    # PCOV and Xdebug are not in this PHP build
+                    EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && '2' || '0' }}
             -
                 # --asan turns the memory manager of PHP off, so AddressSanitizer sees each allocation.
                 name: Test without the memory manager of PHP
@@ -129,4 +132,6 @@ jobs:
                 env:
                     CFLAGS: -fsanitize=address -fno-omit-frame-pointer
                     LDFLAGS: -fsanitize=address
+                    # PCOV and Xdebug are not in this PHP build
+                    EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && '2' || '0' }}
                     RUN_TESTS_FLAGS: --asan
