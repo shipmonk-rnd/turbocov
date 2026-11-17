@@ -8,14 +8,19 @@ on:
 
 jobs:
     tests:
-        name: PHP ${{ matrix.php-version }}, ${{ matrix.build }}
-        runs-on: ubuntu-latest
+        name: PHP ${{ matrix.php-version }}, ${{ matrix.build }}${{ matrix.arch == 'arm64' && ', arm64' || '' }}
+        runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
         container: php:${{ matrix.php-version }}-cli
         strategy:
             fail-fast: false
             matrix:
                 php-version: [ '8.4', '8.5' ]
                 build: [ turbocov, pcov ]
+                arch: [ x86_64, arm64 ]
+                exclude:
+                    -
+                        build: pcov
+                        arch: arm64
         steps:
             -
                 name: Checkout code
@@ -30,12 +35,14 @@ jobs:
                 run: dev/build-in-place.sh ${{ matrix.build }}
 
     clang:
-        name: PHP ${{ matrix.php-version }} built with Clang
-        runs-on: ubuntu-latest
+        name: PHP ${{ matrix.php-version }} built with Clang${{ matrix.arch == 'arm64' && ', arm64' || '' }}
+        runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
         container: debian:trixie
         strategy:
             fail-fast: false
             matrix:
+                php-version: [ 8.4.27, 8.5.12 ]
+                arch: [ x86_64, arm64 ]
                 include:
                     -
                         php-version: 8.4.27
@@ -60,7 +67,7 @@ jobs:
                 uses: actions/cache@v5
                 with:
                     path: /opt/php
-                    key: php-${{ matrix.php-version }}-clang-${{ hashFiles('dev/build-php.sh') }}
+                    key: php-${{ matrix.php-version }}-${{ matrix.arch }}-clang-${{ hashFiles('dev/build-php.sh') }}
             -
                 name: Build PHP
                 if: steps.cache-php.outputs.cache-hit != 'true'
@@ -70,20 +77,24 @@ jobs:
                 run: |
                     export PATH="/opt/php/bin:$PATH"
                     clang --version
-                    php -v
                     dev/build-in-place.sh turbocov
                 env:
                     # PCOV and Xdebug are not in this PHP build
                     EXPECT_SKIPS: 2
 
     sanitizers:
-        name: PHP ${{ matrix.php-version }} debug build with AddressSanitizer, ${{ matrix.build }}
-        runs-on: ubuntu-latest
+        name: PHP ${{ matrix.php-version }} debug build with AddressSanitizer, ${{ matrix.build }}${{ matrix.arch == 'arm64' && ', arm64' || '' }}
+        runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
         container: debian:trixie
         strategy:
             fail-fast: false
             matrix:
                 build: [ turbocov, pcov ]
+                arch: [ x86_64, arm64 ]
+                exclude:
+                    -
+                        build: pcov
+                        arch: arm64
                 include:
                     -
                         php-version: 8.5.12
@@ -106,7 +117,7 @@ jobs:
                 uses: actions/cache@v5
                 with:
                     path: /opt/php
-                    key: php-${{ matrix.php-version }}-gcc-debug-asan-${{ hashFiles('dev/build-php.sh') }}
+                    key: php-${{ matrix.php-version }}-${{ matrix.arch }}-gcc-debug-asan-${{ hashFiles('dev/build-php.sh') }}
             -
                 name: Build PHP
                 if: steps.cache-php.outputs.cache-hit != 'true'
@@ -116,7 +127,6 @@ jobs:
                 name: Build and test
                 run: |
                     export PATH="/opt/php/bin:$PATH"
-                    php -v
                     dev/build-in-place.sh ${{ matrix.build }}
                 env:
                     # PHP with AddressSanitizer has a different zend_arena. An extension must have the same define.
