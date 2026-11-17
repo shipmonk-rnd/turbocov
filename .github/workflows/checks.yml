@@ -151,3 +151,26 @@ jobs:
                     # PCOV and Xdebug are not in this PHP build
                     EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && '2' || '0' }}
                     RUN_TESTS_FLAGS: --asan
+
+    macos:
+        name: PHP ${{ matrix.php-version }}, turbocov, macOS arm64
+        runs-on: macos-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php-version: [ '8.4', '8.5' ]
+        steps:
+            -
+                name: Checkout code
+                uses: actions/checkout@v6
+            -
+                # Two tests need PCOV and Xdebug as files. "coverage: none" removes them from the ini files.
+                name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-version }}
+                    extensions: pcov, xdebug
+                    coverage: none
+            -
+                name: Build and test
+                run: dev/build-in-place.sh turbocov
