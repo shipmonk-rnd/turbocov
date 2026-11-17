@@ -16,9 +16,13 @@ if [ "$name" = "pcov" ]; then
     tests="tests/impersonate-pcov"
 fi
 
+uname -sm
+php -v
+php -n -r 'echo "VM kind: ", defined("ZEND_VM_KIND") ? ZEND_VM_KIND : "not reported by this PHP version", "\n";'
+
 phpize > /dev/null
 ./configure $flags > /dev/null
-make -j"$(nproc)" CFLAGS="-O2 -g -Wall -Wextra -Wno-unused-parameter -Werror ${CFLAGS:-}"
+make -j"$(getconf _NPROCESSORS_ONLN)" CFLAGS="-O2 -g -Wall -Wextra -Wno-unused-parameter -Werror ${CFLAGS:-}"
 
 registered_name="turbocov"
 [ "$name" = "pcov" ] && registered_name="pcov"

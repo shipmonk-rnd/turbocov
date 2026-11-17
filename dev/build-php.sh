@@ -20,7 +20,7 @@ tar -xJf php.tar.xz --strip-components=1
     --disable-all --enable-cli --disable-cgi --disable-phpdbg --enable-opcache "$@" > configure.log 2>&1 \
     || { tail -50 configure.log; exit 1; }
 
-make -j"$(nproc)" > make.log 2>&1 || { tail -80 make.log; exit 1; }
+make -j"$(getconf _NPROCESSORS_ONLN)" > make.log 2>&1 || { tail -80 make.log; exit 1; }
 make install > install.log 2>&1
 mkdir -p "$prefix/etc"
 
