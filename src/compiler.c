@@ -341,6 +341,23 @@ static void tc_process_op_array(zend_op_array *op_array)
 	}
 }
 
+/*
+ * PHP 8.6 compiles the closure of a partial function application at run time, and the compile hooks do not see it.
+ * pass_two() gave each of its opcodes the ZEND_USER_OPCODE handler, thus its first opcode comes to the probe callback.
+ */
+bool tc_adopt_op_array(zend_op_array *op_array, const zend_op *opline)
+{
+	if (!tc_active || opline < op_array->opcodes || opline >= op_array->opcodes + op_array->last) {
+		return false;
+	}
+
+	tc_unregister_handlers();
+	tc_process_op_array(op_array);
+	tc_register_handlers();
+
+	return true;
+}
+
 static void tc_process_class(zend_class_entry *ce)
 {
 	zend_function *function;

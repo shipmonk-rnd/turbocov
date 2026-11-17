@@ -142,6 +142,7 @@ TC_LOCAL void tc_fill_ignored_opcodes(void);
 TC_LOCAL void tc_install(void);
 TC_LOCAL void tc_compiler_activate(void);
 TC_LOCAL void tc_compiler_deactivate(void);
+TC_LOCAL bool tc_adopt_op_array(zend_op_array *op_array, const zend_op *opline);
 TC_LOCAL void tc_op_array_dtor(zend_op_array *op_array);
 
 /* paths.c: the settings that select the files */
