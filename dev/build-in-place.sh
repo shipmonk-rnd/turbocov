@@ -20,9 +20,16 @@ phpize > /dev/null
 ./configure $flags > /dev/null
 make -j"$(nproc)" CFLAGS="-O2 -g -Wall -Wextra -Wno-unused-parameter -Werror ${CFLAGS:-}"
 
+extension_dir="$(php-config --extension-dir)"
+
 # "make test" removes zend_extension lines from its ini file. A shared OPcache must come in again.
-opcache="$(php-config --extension-dir)/opcache.so"
-[ -f "$opcache" ] && opcache="-d zend_extension=$opcache" || opcache=""
+opcache=""
+[ -f "$extension_dir/opcache.so" ] && opcache="-d zend_extension=$extension_dir/opcache.so"
+
+# "make test" uses modules/ as the extension directory. Two tests load PCOV and Xdebug from there.
+for extension in pcov xdebug; do
+    [ -f "$extension_dir/$extension.so" ] && ln -sf "$extension_dir/$extension.so" "modules/$extension.so"
+done
 
 log="$(mktemp)"
 NO_INTERACTION=1 REPORT_EXIT_STATUS=1 make test TESTS="${RUN_TESTS_FLAGS:-} $opcache --show-diff $tests" | tee "$log"

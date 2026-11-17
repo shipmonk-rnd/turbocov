@@ -59,7 +59,7 @@ jobs:
             -
                 name: Cache PHP
                 id: cache-php
-                uses: actions/cache@v4
+                uses: actions/cache@v5
                 with:
                     path: /opt/php
                     key: php-${{ matrix.php-version }}-clang-${{ hashFiles('dev/build-php.sh') }}
@@ -94,14 +94,14 @@ jobs:
                 name: Install build tools
                 run: |
                     apt-get update -qq
-                    apt-get install -y -qq --no-install-recommends clang llvm make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
+                    apt-get install -y -qq --no-install-recommends clang libclang-rt-dev llvm make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
             -
                 name: Checkout code
                 uses: actions/checkout@v6
             -
                 name: Cache PHP
                 id: cache-php
-                uses: actions/cache@v4
+                uses: actions/cache@v5
                 with:
                     path: /opt/php
                     key: php-${{ matrix.php-version }}-clang-debug-asan-${{ hashFiles('dev/build-php.sh') }}
