@@ -129,8 +129,7 @@ Notes:
     - Thread-safe PHP (ZTS)
     - PHP-FPM and other web SAPIs
 - Not tested yet:
-    - ARM (Apple Silicon, arm64 Linux)
-    - macOS
+    - macOS on Intel
 - Cannot run together with:
     - Xdebug
     - PCOV
