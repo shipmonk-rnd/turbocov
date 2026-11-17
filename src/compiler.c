@@ -31,6 +31,7 @@ void tc_fill_ignored_opcodes(void)
 static tc_file *tc_file_for(zend_string *filename)
 {
 	zval *known;
+	zval entry;
 	tc_file *file = NULL;
 
 	if (!filename) {
@@ -49,7 +50,9 @@ static tc_file *tc_file_for(zend_string *filename)
 		zend_hash_init(&file->lines, 64, NULL, NULL, 1);
 	}
 
-	zend_hash_add_ptr(&tc_files, filename, file);
+	/* zend_hash_add_ptr() does not accept NULL, which is the value for a file that is not selected. */
+	ZVAL_PTR(&entry, file);
+	zend_hash_add(&tc_files, filename, &entry);
 
 	return file;
 }
