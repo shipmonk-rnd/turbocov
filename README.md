@@ -54,10 +54,8 @@ Execution of unlisted files has **zero overhead**!
 
 ## Requirements
 
-- PHP 8.4 or 8.5, non-thread-safe build.
-- Linux or macOS.
-- The CLI SAPI.
-- OPcache off, or OPcache on with `opcache.optimization_level=0`.
+- PHP 8.4 or 8.5
+- PHPUnit 13.3 or later. For older versions, see [Usage with older PHPUnit](#usage-with-older-phpunit).
 
 ## Settings
 
@@ -137,17 +135,24 @@ Notes:
 - PIE warns that it cannot detect the extension after the install. That is expected, because PHP now lists it as `pcov`.
 - This mode is a temporary aid, and a later version can remove it.
 
-## Limits
+## Limitations
 
-- OPcache: turbocov puts its probes into the code that OPcache caches. This is not possible with `opcache.protect_memory=1`, with `opcache.file_cache`, with `opcache.preload`, with the JIT, and in a SAPI other than the CLI. In these cases `start()` throws an exception.
-- OPcache optimizer: `start()` throws an exception when OPcache is on and `opcache.optimization_level` is not `0`. The optimizer removes code. A line without code has no probe, and the report then shows a line as not covered although the test ran it.
-- Xdebug and PCOV: `start()` throws an exception when one of them is loaded, also when it is not active. Xdebug is not tested together with turbocov. PCOV replaces the instruction loop of PHP, and turbocov is then slow.
-- phpdbg replaces the instruction loop too. turbocov is then slow. The results stay correct.
-- `pcntl_fork()` with OPcache on: the parent process and the child process share the cached code. A probe that fires in one process is gone for the other, and lines can be missing.
-- An extension that registers opcode handlers after turbocov replaces the handler of turbocov. Probes on those opcodes then record nothing.
-- No branch coverage, no path coverage, no detection of dead code.
-- Property hooks: turbocov reports their lines. PCOV 1.0.12 does not report them; the `develop` branch of PCOV does, and it gives the same line data as turbocov. With PHPUnit 13, a report of turbocov thus has lines that a report of PCOV 1.0.12 does not have.
-- In the build with the name `pcov`, `clear(true)` does not drop the file list. The argument has no effect.
+Not supported:
+
+- Windows
+- Thread-safe PHP (ZTS)
+- PHP-FPM and other web SAPIs
+
+Not tested yet:
+
+- ARM (Apple Silicon, arm64 Linux)
+- macOS
+
+Cannot run together with:
+
+- Xdebug
+- PCOV
+- OPcache optimizer, JIT, file cache or preloading
 
 ## Build from source
 
