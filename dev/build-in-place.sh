@@ -40,8 +40,16 @@ for extension in pcov xdebug; do
     [ -f "$extension_dir/$extension.so" ] && ln -sf "$extension_dir/$extension.so" "modules/$extension.so"
 done
 
+# A pipe to "tee" hides the exit status of "make test", and sh has no pipefail option.
 log="$(mktemp)"
-NO_INTERACTION=1 REPORT_EXIT_STATUS=1 make test TESTS="${RUN_TESTS_FLAGS:-} $opcache --show-diff $tests" | tee "$log"
+status=0
+NO_INTERACTION=1 REPORT_EXIT_STATUS=1 make test TESTS="${RUN_TESTS_FLAGS:-} $opcache --show-diff $tests" > "$log" 2>&1 || status=$?
+cat "$log"
+
+if [ "$status" != 0 ]; then
+    echo "The tests failed." >&2
+    exit "$status"
+fi
 
 if ! grep -q "Tests skipped *: *${EXPECT_SKIPS:-0} " "$log"; then
     echo "The run must skip ${EXPECT_SKIPS:-0} tests. Set EXPECT_SKIPS when a skip is correct." >&2

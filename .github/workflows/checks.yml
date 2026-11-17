@@ -119,8 +119,11 @@ jobs:
                     php -v
                     dev/build-in-place.sh ${{ matrix.build }}
                 env:
-                    CFLAGS: -fsanitize=address -fno-omit-frame-pointer
+                    # PHP with AddressSanitizer has a different zend_arena. An extension must have the same define.
+                    CFLAGS: -fsanitize=address -fno-omit-frame-pointer -DZEND_TRACK_ARENA_ALLOC
                     LDFLAGS: -fsanitize=address
+                    # turbocov does not free its tables at the end of the process. A later change does that.
+                    ASAN_OPTIONS: detect_leaks=0
                     # PCOV and Xdebug are not in this PHP build
                     EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && '2' || '0' }}
             -
@@ -130,8 +133,11 @@ jobs:
                     export PATH="/opt/php/bin:$PATH"
                     dev/build-in-place.sh ${{ matrix.build }}
                 env:
-                    CFLAGS: -fsanitize=address -fno-omit-frame-pointer
+                    # PHP with AddressSanitizer has a different zend_arena. An extension must have the same define.
+                    CFLAGS: -fsanitize=address -fno-omit-frame-pointer -DZEND_TRACK_ARENA_ALLOC
                     LDFLAGS: -fsanitize=address
+                    # turbocov does not free its tables at the end of the process. A later change does that.
+                    ASAN_OPTIONS: detect_leaks=0
                     # PCOV and Xdebug are not in this PHP build
                     EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && '2' || '0' }}
                     RUN_TESTS_FLAGS: --asan
