@@ -1,13 +1,9 @@
-# turbocov
+# turbocov – code coverage for PHP at near-native speed!
 
-**Code coverage for PHP at near-native speed.**
-
-- ⚡ **Fast:** 30× less overhead than PCOV, 400× less than Xdebug
-- 🎯 **Precise:** Reports the same lines as PCOV
-- 🪶 **Pay for what you measure:** Collect only the files you changed, the rest runs untouched
-- 🍰 **Easy-to-use:** One extension, one line in `phpunit.xml`
-- 🛡️ **Never silently wrong:** A broken setup stops the run with a clear message
-- ✨ **Modern:** PHP 8.4 – 8.5, PHPUnit 13.3+
+- ⚡ **Ultrafast:** 400× less than Xdebug, 30× less overhead than PCOV
+- 🎯 **Focused:** Zero overhead for code you do not measure
+- 🍰 **Easy-to-use:** One `pie install`, one line in `phpunit.xml`
+- 🛡️ **Robust:** A broken setup stops the run with a clear message
 
 ## Comparison
 
@@ -37,32 +33,24 @@ Tell PHPUnit to use it:
 <coverage driver="ShipMonk\Turbocov\TurbocovDriver"/>
 ```
 
-Run your tests:
+#### Full coverage:
 
-```sh
+```bash
 php -d turbocov.collect_paths=src vendor/bin/phpunit --coverage-html coverage
 ```
 
-Only want coverage for what your branch changed? Pay for nothing else:
+#### PR-only coverage:
+
+Only want coverage for what your branch changed?
 
 ```sh
 git diff --name-only --diff-filter=AMR origin/master...HEAD -- '*.php' > changed.txt
 php -d turbocov.collect_paths=@changed.txt vendor/bin/phpunit --coverage-clover clover.xml
 ```
 
-turbocov is new. Read the [limits](#limits) before you rely on it. The package [shipmonk/turbocov-phpunit](https://github.com/shipmonk-rnd/turbocov-phpunit) has the PHPUnit driver and its details.
+Execution of unlisted files has **zero overhead**!
 
-## How it works
-
-PCOV and Xdebug do work for each instruction that PHP executes. turbocov does work only when a line runs for the first time.
-
-1. PHP compiles a file into opcodes. Each opcode has a pointer to its handler.
-2. For a whitelisted file, turbocov replaces the handler of the first opcode of each line with a probe.
-3. When a probe fires, it records the line and puts the original handler back. PHP then executes the same opcode again.
-4. From that moment the line runs without a probe.
-5. `stop()` arms the fired probes again. The cost of a test run is in proportion to the number of lines that the test touched.
-
-turbocov does not replace the instruction loop of PHP. Code without probes runs as if the extension is not loaded.
+<sub>This is handy for [GitLab coverage vizualization](https://docs.gitlab.com/ci/testing/code_coverage/#coverage-visualization)</sub>
 
 ## Requirements
 
@@ -70,17 +58,6 @@ turbocov does not replace the instruction loop of PHP. Code without probes runs 
 - Linux or macOS.
 - The CLI SAPI.
 - OPcache off, or OPcache on with `opcache.optimization_level=0`.
-
-## Build from source
-
-```sh
-phpize
-./configure --enable-turbocov
-make
-make test
-```
-
-Load the result with `extension=/path/to/modules/turbocov.so`.
 
 ## Settings
 
@@ -104,6 +81,18 @@ Rules:
 - Without `turbocov.collect_paths` turbocov collects nothing, and `start()` throws an exception.
 - The settings apply when PHP compiles a file. Set them in `php.ini` or with `-d`, not with `ini_set()`.
 
+## How it works
+
+PCOV and Xdebug do work for each instruction that PHP executes. turbocov does work only when a line runs for the first time.
+
+1. PHP compiles a file into opcodes. Each opcode has a pointer to its handler.
+2. For a whitelisted file, turbocov replaces the handler of the first opcode of each line with a probe.
+3. When a probe fires, it records the line and puts the original handler back. PHP then executes the same opcode again.
+4. From that moment the line runs without a probe.
+5. `stop()` arms the fired probes again. The cost of a test run is in proportion to the number of lines that the test touched.
+
+turbocov does not replace the instruction loop of PHP. Code without probes runs as if the extension is not loaded.
+
 ## Functions
 
 ```php
@@ -113,7 +102,7 @@ Rules:
 \turbocov\get_executable_lines(      // file => line => -1 for each executable line of the given files
     ['/absolute/path/File.php'],
 );
-\turbocov\get_debug_info(            // the state of one file, for a person
+\turbocov\get_debug_info(            // array of debug data like skip reason, executable lines and all probes
     '/absolute/path/File.php',
 );
 ```
@@ -124,43 +113,6 @@ Rules:
 - A file that PHP loaded during the collection is in the result of `stop()`, also when none of its lines ran.
 - `get_executable_lines()` knows only the files that PHP compiled and that are in `turbocov.collect_paths`. Other files are not in the result.
 
-A coverage tool needs the lines that did not run only once for each file:
-
-```php
-$executed = \turbocov\stop();
-$newFiles = array_diff_key($executed, $seenFiles);
-
-foreach (\turbocov\get_executable_lines(array_keys($newFiles)) as $file => $lines) {
-    $executed[$file] = array_replace($lines, $executed[$file]);
-    $seenFiles[$file] = true;
-}
-```
-
-### Debug data
-
-`get_debug_info()` is for a person who looks for the cause of a result. Its format can change in each version. Do not use it in a tool.
-
-It returns the probes of one file:
-
-```php
-[
-    'skip_reason'      => null,   // or the reason why the file has no data
-    'executable_lines' => [5, 6, 9],
-    'units'            => [       // one for each function, method and closure
-        [
-            'name'   => 'Foo::bar',
-            'probes' => [
-                ['line' => 5, 'opnum' => 1, 'opcode' => 'ZEND_IS_SMALLER', 'state' => 'fired'],
-                ['line' => 6, 'opnum' => 3, 'opcode' => 'ZEND_RETURN', 'state' => 'armed'],
-            ],
-        ],
-    ],
-]
-```
-
-- `skip_reason` tells if the file is not in `turbocov.collect_paths`, if an exclude setting has it, or if PHP did not compile it.
-- `state` is `armed`, `fired` or `fired while the collection was off`.
-- The code of a file outside of all functions has the name `{main}`. PHP destroys that code after it ran, so it is usually not in the list.
 
 ## PHPUnit before 13.3 and other tools that only know PCOV
 
@@ -190,9 +142,20 @@ PHPUnit and other tools that support PCOV then work without a change. This build
 - Property hooks: turbocov reports their lines. PCOV 1.0.12 does not report them; the `develop` branch of PCOV does, and it gives the same line data as turbocov. With PHPUnit 13, a report of turbocov thus has lines that a report of PCOV 1.0.12 does not have.
 - In the build with the name `pcov`, `clear(true)` does not drop the file list. The argument has no effect.
 
+## Build from source
+
+```sh
+phpize
+./configure --enable-turbocov
+make
+make test
+```
+
+Load the result with `extension=/path/to/modules/turbocov.so`.
+
 ## Development
 
-The scripts in `dev/` need Docker. They limit each container to 2 GB of memory.
+The scripts in `dev/` need Docker.
 
 ```sh
 RUN_TESTS=1 dev/build.sh 8.5                 # build and run the tests
