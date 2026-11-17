@@ -99,13 +99,6 @@ turbocov does not replace the instruction loop of PHP. Code without probes runs 
 );
 ```
 
-- `ensure_can_collect()` and `start()` throw `\turbocov\CannotCollectException` when turbocov cannot collect coverage. The message has the reason, for example `turbocov.collect_paths is not set`. The class extends `RuntimeException`.
-- `ensure_can_collect()` does not start the collection. A coverage tool calls it one time before the first test.
-- `stop()` returns only the lines that ran. It also arms the probes again, so the next `start()` begins with no data.
-- A file that PHP loaded during the collection is in the result of `stop()`, also when none of its lines ran.
-- `get_executable_lines()` knows only the files that PHP compiled and that are in `turbocov.collect_paths`. Other files are not in the result.
-
-
 ## Usage with older PHPUnit
 
 **The problem:** PHPUnit before 13.3 cannot load a custom coverage driver. It only knows PCOV and Xdebug.
@@ -131,22 +124,22 @@ Notes:
 
 ## Limitations
 
-Not supported:
-
-- Windows
-- Thread-safe PHP (ZTS)
-- PHP-FPM and other web SAPIs
-
-Not tested yet:
-
-- ARM (Apple Silicon, arm64 Linux)
-- macOS
-
-Cannot run together with:
-
-- Xdebug
-- PCOV
-- OPcache optimizer, JIT, file cache or preloading
+- Not supported:
+    - Windows
+    - Thread-safe PHP (ZTS)
+    - PHP-FPM and other web SAPIs
+- Not tested yet:
+    - ARM (Apple Silicon, arm64 Linux)
+    - macOS
+- Cannot run together with:
+    - Xdebug
+    - PCOV
+    - These settings (when `opcache.enable_cli=1`):
+      - `opcache.optimization_level` other than `0`
+      - `opcache.jit`
+      - `opcache.file_cache`
+      - `opcache.preload`
+      - `opcache.protect_memory=1`
 
 ## Build from source
 
@@ -169,19 +162,6 @@ dev/build.sh 8.5 pcov                        # build with the name pcov
 dev/compare-with-pcov.sh 8.5 path/File.php   # compare the line data with PCOV
 dev/bench.sh 8.5                             # compare the speed with plain PHP and PCOV
 ```
-
-The source is in `src/`:
-
-| File | Content |
-|---|---|
-| `turbocov.c` | The module: settings, startup and shutdown |
-| `compiler.c` | The compile hooks and the installation of probes |
-| `probes.c` | The probe handler and the lists of fired probes |
-| `paths.c` | The settings that select the files |
-| `conflicts.c` | The setups in which probes cannot work |
-| `api_native.c` | The functions for PHP code |
-| `api_pcov.c` | The functions of PCOV, for the build with the name `pcov` |
-| `debug.c` | `get_debug_info()` and `get_status()` |
 
 ## License
 
