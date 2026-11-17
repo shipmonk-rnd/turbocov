@@ -174,3 +174,38 @@ jobs:
             -
                 name: Build and test
                 run: dev/build-in-place.sh turbocov
+
+    macos-clang:
+        name: PHP ${{ matrix.php-version }} built with Apple Clang, macOS arm64
+        runs-on: macos-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    -
+                        php-version: 8.5.12
+                        sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
+        steps:
+            -
+                name: Checkout code
+                uses: actions/checkout@v6
+            -
+                name: Cache PHP
+                id: cache-php
+                uses: actions/cache@v5
+                with:
+                    path: ~/php
+                    key: php-${{ matrix.php-version }}-macos-arm64-clang-${{ hashFiles('dev/build-php.sh') }}
+            -
+                name: Build PHP
+                if: steps.cache-php.outputs.cache-hit != 'true'
+                run: dev/build-php.sh ${{ matrix.php-version }} ${{ matrix.sha256 }} "$HOME/php"
+            -
+                name: Build and test
+                run: |
+                    export PATH="$HOME/php/bin:$PATH"
+                    cc --version
+                    dev/build-in-place.sh turbocov
+                env:
+                    # PCOV and Xdebug are not in this PHP build
+                    EXPECT_SKIPS: 2
