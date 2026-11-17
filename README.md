@@ -1,14 +1,56 @@
 # turbocov
 
-Coverage engine for PHP at near-native speed! 400× less driver overhead than Xdebug, 30× less than PCOV.
+**Code coverage for PHP at near-native speed.**
 
-turbocov collects line coverage. A line costs time only when it runs for the first time in a test.
+- ⚡ **Fast:** 30× less overhead than PCOV, 400× less than Xdebug
+- 🎯 **Precise:** Reports the same lines as PCOV
+- 🪶 **Pay for what you measure:** Collect only the files you changed, the rest runs untouched
+- 🍰 **Easy-to-use:** One extension, one line in `phpunit.xml`
+- 🛡️ **Never silently wrong:** A broken setup stops the run with a clear message
+- ✨ **Modern:** PHP 8.4 – 8.5, PHPUnit 13.3+
 
-- It reports the same line data as [PCOV](https://github.com/krakjoe/pcov), and also the lines of property hooks.
-- Files that are not in its path list have no cost at run time. They have no probes, and their `switch` and `match` statements keep their jump tables.
-- [shipmonk/turbocov-phpunit](https://github.com/shipmonk-rnd/turbocov-phpunit) connects it to PHPUnit.
+## Comparison
 
-Status: experimental. Read [Limits](#limits) before you use it.
+![Time that a coverage driver adds to the test suite of Carbon](performance.svg)
+
+|                             | turbocov | PCOV                 | Xdebug               |
+|-----------------------------|----------|----------------------|----------------------|
+| Time added to a test run*   | **+3 %** | +96 %                | +1,237 %             |
+| Line coverage               | ✅       | ✅                   | ✅                   |
+| Collect only selected files | ✅       | ⚠️ slow for the rest | ⚠️ slow for the rest |
+| Branch & path coverage      | ❌       | ❌                   | ✅                   |
+
+<sup><sub>\*Driver alone on the test suite of Carbon (6,349 tests). Run it yourself: [benchmark/](benchmark/README.md)</sub></sup>
+
+## Installation
+
+```sh
+pie install shipmonk/turbocov
+composer require --dev shipmonk/turbocov-phpunit
+```
+
+## Usage
+
+Tell PHPUnit to use it:
+
+```xml
+<coverage driver="ShipMonk\Turbocov\TurbocovDriver"/>
+```
+
+Run your tests:
+
+```sh
+php -d turbocov.collect_paths=src vendor/bin/phpunit --coverage-html coverage
+```
+
+Only want coverage for what your branch changed? Pay for nothing else:
+
+```sh
+git diff --name-only --diff-filter=AMR origin/master...HEAD -- '*.php' > changed.txt
+php -d turbocov.collect_paths=@changed.txt vendor/bin/phpunit --coverage-clover clover.xml
+```
+
+turbocov is new. Read the [limits](#limits) before you rely on it. The package [shipmonk/turbocov-phpunit](https://github.com/shipmonk-rnd/turbocov-phpunit) has the PHPUnit driver and its details.
 
 ## How it works
 
@@ -18,17 +60,9 @@ PCOV and Xdebug do work for each instruction that PHP executes. turbocov does wo
 2. For a whitelisted file, turbocov replaces the handler of the first opcode of each line with a probe.
 3. When a probe fires, it records the line and puts the original handler back. PHP then executes the same opcode again.
 4. From that moment the line runs without a probe.
-5. `clear()` arms the fired probes again. The cost of a test run is in proportion to the number of lines that the test touched.
+5. `stop()` arms the fired probes again. The cost of a test run is in proportion to the number of lines that the test touched.
 
 turbocov does not replace the instruction loop of PHP. Code without probes runs as if the extension is not loaded.
-
-## Performance
-
-![Time that a coverage driver adds to the test suite of Carbon](performance.svg)
-
-turbocov adds about 30 times less time than PCOV and about 400 times less time than Xdebug.
-
-The numbers are for the driver alone, without the coverage library of PHPUnit. [benchmark/](benchmark/README.md) has the method, two more test suites and the script that repeats the measurement.
 
 ## Requirements
 
@@ -37,7 +71,7 @@ The numbers are for the driver alone, without the coverage library of PHPUnit. [
 - The CLI SAPI.
 - OPcache off, or OPcache on with `opcache.optimization_level=0`.
 
-## Build
+## Build from source
 
 ```sh
 phpize
@@ -69,13 +103,6 @@ Rules:
 - A pattern that is not valid is an error too.
 - Without `turbocov.collect_paths` turbocov collects nothing, and `start()` throws an exception.
 - The settings apply when PHP compiles a file. Set them in `php.ini` or with `-d`, not with `ini_set()`.
-
-To collect coverage only for the files that a branch changes:
-
-```sh
-git diff --name-only --diff-filter=AMR origin/master...HEAD -- '*.php' > changed.txt
-php -d turbocov.collect_paths=@changed.txt vendor/bin/phpunit
-```
 
 ## Functions
 
@@ -135,30 +162,7 @@ It returns the probes of one file:
 - `state` is `armed`, `fired` or `fired while the collection was off`.
 - The code of a file outside of all functions has the name `{main}`. PHP destroys that code after it ran, so it is usually not in the list.
 
-## Use with PHPUnit
-
-PHPUnit 13.3 and later can load a coverage driver from a package. The package [shipmonk/turbocov-phpunit](https://github.com/shipmonk-rnd/turbocov-phpunit) has the driver for turbocov.
-
-```sh
-pie install shipmonk/turbocov
-composer require --dev shipmonk/turbocov-phpunit
-```
-
-Set the driver in `phpunit.xml`:
-
-```xml
-<coverage driver="ShipMonk\Turbocov\TurbocovDriver"/>
-```
-
-Then give the paths to the extension and run PHPUnit:
-
-```sh
-php -d turbocov.collect_paths=src vendor/bin/phpunit
-```
-
-The README of the package has the details.
-
-### PHPUnit before 13.3 and other tools that only know PCOV
+## PHPUnit before 13.3 and other tools that only know PCOV
 
 These tools select their PCOV driver when an extension with the name `pcov` is loaded. A build option makes turbocov register with that name:
 
