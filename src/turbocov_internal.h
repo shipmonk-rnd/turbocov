@@ -143,6 +143,34 @@ TC_LOCAL void tc_paths_deactivate(void);
 TC_LOCAL bool tc_paths_select(zend_string *filename);
 TC_LOCAL zend_string *tc_skip_reason(zend_string *filename);
 
+/*
+ * threads.c: the guard for thread-safe PHP.
+ * The compile hook changes the table of opcode handlers for a moment, and all threads of the process use this table.
+ * Thus only the thread of the first request (the owner) has probes. When a second thread starts a request, the collection goes off.
+ */
+#ifdef ZTS
+# define TC_SECOND_THREAD_REASON "a second PHP thread started in this process (ext-parallel, FrankenPHP). turbocov supports one PHP thread only"
+
+TC_LOCAL extern bool tc_second_thread;
+
+TC_LOCAL void tc_threads_startup(void);
+TC_LOCAL void tc_threads_shutdown(void);
+TC_LOCAL void tc_threads_lock(void);
+TC_LOCAL void tc_threads_unlock(void);
+TC_LOCAL bool tc_threads_claim(void);
+TC_LOCAL bool tc_thread_is_owner(void);
+TC_LOCAL bool tc_threads_refuse(void); /* true: the caller is not on the owner thread and must return */
+#else
+# define tc_second_thread 0
+# define tc_threads_startup()
+# define tc_threads_shutdown()
+# define tc_threads_lock()
+# define tc_threads_unlock()
+# define tc_threads_claim() true
+# define tc_thread_is_owner() true
+# define tc_threads_refuse() false
+#endif
+
 /* conflicts.c: the setups in which probes cannot work */
 TC_LOCAL const char *tc_find_conflict(void);
 

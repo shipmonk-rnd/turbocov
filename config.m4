@@ -23,7 +23,7 @@ if test "$PHP_TURBOCOV" != "no"; then
   fi
 
   PHP_NEW_EXTENSION([turbocov],
-    [src/turbocov.c src/compiler.c src/probes.c src/paths.c src/conflicts.c src/debug.c $turbocov_api],
+    [src/turbocov.c src/compiler.c src/probes.c src/paths.c src/conflicts.c src/debug.c src/threads.c $turbocov_api],
     [$ext_shared])
   PHP_ADD_BUILD_DIR([$ext_builddir/src])
   PHP_ADD_INCLUDE([$ext_srcdir])

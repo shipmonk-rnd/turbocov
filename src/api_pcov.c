@@ -17,6 +17,10 @@ PHP_NAMED_FUNCTION(tc_function_start)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
 
+	if (tc_threads_refuse()) {
+		return;
+	}
+
 	/* The PCOV driver of PHPUnit does not expect an exception from start(). */
 	if (*tc_off_reason && !tc_off_warned) {
 		tc_off_warned = true;
@@ -53,7 +57,7 @@ PHP_NAMED_FUNCTION(tc_function_collect)
 
 	array_init(return_value);
 
-	if (!tc_active || !tc_dirty) {
+	if (tc_threads_refuse() || !tc_active || !tc_dirty) {
 		return;
 	}
 
@@ -108,6 +112,10 @@ PHP_NAMED_FUNCTION(tc_function_stop)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
 
+	if (tc_threads_refuse()) {
+		return;
+	}
+
 	tc_collecting = false;
 }
 /* }}} */
@@ -122,7 +130,7 @@ PHP_NAMED_FUNCTION(tc_function_clear)
 		Z_PARAM_BOOL(files)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (!tc_active) {
+	if (tc_threads_refuse() || !tc_active) {
 		return;
 	}
 
@@ -139,6 +147,10 @@ PHP_NAMED_FUNCTION(tc_function_waiting)
 
 	array_init(return_value);
 
+	if (tc_threads_refuse()) {
+		return;
+	}
+
 	for (size_t i = 0; i < tc_waiting_count; i++) {
 		add_next_index_str(return_value, zend_string_copy(tc_waiting[i]->name));
 	}
@@ -149,6 +161,10 @@ PHP_NAMED_FUNCTION(tc_function_waiting)
 PHP_NAMED_FUNCTION(tc_function_memory)
 {
 	ZEND_PARSE_PARAMETERS_NONE();
+
+	if (tc_threads_refuse()) {
+		RETURN_LONG(0);
+	}
 
 	RETURN_LONG((zend_long) ((tc_hits.capacity + tc_strays.capacity) * sizeof(tc_ref)));
 }

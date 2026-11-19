@@ -35,6 +35,7 @@ static PHP_MINIT_FUNCTION(turbocov)
 #endif
 
 	REGISTER_INI_ENTRIES();
+	tc_threads_startup();
 
 	tc_ini_enabled = INI_BOOL(TURBOCOV_NAME ".enabled");
 
@@ -83,6 +84,7 @@ static PHP_MSHUTDOWN_FUNCTION(turbocov)
 	}
 
 	UNREGISTER_INI_ENTRIES();
+	tc_threads_shutdown();
 
 	return SUCCESS;
 }
@@ -93,6 +95,15 @@ static PHP_RINIT_FUNCTION(turbocov)
 		return SUCCESS;
 	}
 
+	/* The lock makes a thread that starts now wait until the handlers of the owner are complete. */
+	tc_threads_lock();
+
+	if (!tc_threads_claim()) {
+		tc_threads_unlock();
+
+		return SUCCESS;
+	}
+
 	if (!tc_installed) {
 		const char *conflict = tc_find_conflict();
 
@@ -100,12 +111,15 @@ static PHP_RINIT_FUNCTION(turbocov)
 			/* No message here: most processes do not collect coverage, and a message at startup can break their output. */
 			snprintf(tc_off_reason, sizeof(tc_off_reason), "%s", conflict);
 			tc_ini_enabled = false;
+			tc_threads_unlock();
 
 			return SUCCESS;
 		}
 
 		tc_install();
 	}
+
+	tc_threads_unlock();
 
 	tc_compiler_activate();
 
@@ -124,7 +138,7 @@ static PHP_RINIT_FUNCTION(turbocov)
 
 static PHP_RSHUTDOWN_FUNCTION(turbocov)
 {
-	if (!tc_active) {
+	if (!tc_active || !tc_thread_is_owner()) {
 		return SUCCESS;
 	}
 

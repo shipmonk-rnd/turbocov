@@ -6,6 +6,10 @@
 
 static bool tc_ensure_can_collect(void)
 {
+	if (tc_threads_refuse()) {
+		return false;
+	}
+
 	if (*tc_off_reason) {
 		zend_throw_exception_ex(tc_exception_ce, 0, "turbocov cannot collect coverage: %s", tc_off_reason);
 
@@ -49,7 +53,21 @@ PHP_NAMED_FUNCTION(tc_function_stop)
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
+	if (tc_threads_refuse()) {
+		RETURN_THROWS();
+	}
+
 	tc_collecting = false;
+
+	/* The data has no lines of the other threads, and code that PHP compiled after their start has no probes. */
+	if (tc_second_thread && tc_active) {
+		tc_refs_rearm(&tc_hits);
+		tc_waiting_reset();
+		tc_dirty = false;
+		tc_ensure_can_collect();
+		RETURN_THROWS();
+	}
+
 	array_init(return_value);
 
 	if (!tc_active) {
@@ -90,6 +108,10 @@ PHP_NAMED_FUNCTION(tc_function_get_executable_lines)
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_ARRAY_HT(files)
 	ZEND_PARSE_PARAMETERS_END();
+
+	if (tc_threads_refuse()) {
+		RETURN_THROWS();
+	}
 
 	array_init(return_value);
 

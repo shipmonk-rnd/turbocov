@@ -120,6 +120,12 @@ PHP_NAMED_FUNCTION(tc_function_get_status)
 
 	ZEND_PARSE_PARAMETERS_NONE();
 
+	array_init(return_value);
+
+	if (tc_threads_refuse()) {
+		return;
+	}
+
 	if (tc_active) {
 		ZEND_HASH_MAP_FOREACH_VAL(&tc_files, known) {
 			if (Z_PTR_P(known)) {
@@ -127,8 +133,6 @@ PHP_NAMED_FUNCTION(tc_function_get_status)
 			}
 		} ZEND_HASH_FOREACH_END();
 	}
-
-	array_init(return_value);
 
 	if (*tc_off_reason) {
 		add_assoc_string(return_value, "disabled_reason", tc_off_reason);
@@ -157,6 +161,11 @@ PHP_NAMED_FUNCTION(tc_function_get_debug_info)
 	ZEND_PARSE_PARAMETERS_END();
 
 	array_init(return_value);
+
+	if (tc_threads_refuse()) {
+		return;
+	}
+
 	array_init(&lines);
 	array_init(&units);
 

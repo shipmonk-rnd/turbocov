@@ -24,6 +24,11 @@ phpize > /dev/null
 ./configure $flags > /dev/null
 make -j"$(getconf _NPROCESSORS_ONLN)" CFLAGS="-O2 -g -Wall -Wextra -Wno-unused-parameter -Werror ${CFLAGS:-}"
 
+# The tests in tests/zts start a second PHP thread. Only thread-safe PHP can do that.
+if [ "$name" = "turbocov" ] && php -n -r 'exit(PHP_ZTS ? 0 : 1);'; then
+    tests="$tests tests/zts"
+fi
+
 registered_name="turbocov"
 [ "$name" = "pcov" ] && registered_name="pcov"
 
@@ -39,8 +44,8 @@ extension_dir="$(php-config --extension-dir)"
 opcache=""
 [ -f "$extension_dir/opcache.so" ] && opcache="-d zend_extension=$extension_dir/opcache.so"
 
-# "make test" uses modules/ as the extension directory. Two tests load PCOV and Xdebug from there.
-for extension in pcov xdebug; do
+# "make test" uses modules/ as the extension directory. Three tests load PCOV, Xdebug and parallel from there.
+for extension in pcov xdebug parallel; do
     [ -f "$extension_dir/$extension.so" ] && ln -sf "$extension_dir/$extension.so" "modules/$extension.so"
 done
 

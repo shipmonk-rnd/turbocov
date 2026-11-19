@@ -221,7 +221,16 @@ static void tc_after_compile(zend_op_array *main_op_array, uint32_t first_functi
 	zend_function *function;
 	zend_class_entry *ce;
 
-	if (!tc_active) {
+	if (!tc_active || !tc_thread_is_owner()) {
+		return;
+	}
+
+	tc_threads_lock();
+
+	/* A different thread can run an opcode that has the ZEND_USER_OPCODE handler. The table must stay complete for it. */
+	if (tc_second_thread) {
+		tc_threads_unlock();
+
 		return;
 	}
 
@@ -242,6 +251,7 @@ static void tc_after_compile(zend_op_array *main_op_array, uint32_t first_functi
 	} ZEND_HASH_FOREACH_END();
 
 	tc_register_handlers();
+	tc_threads_unlock();
 
 	if (main_op_array) {
 		tc_record_skipped_return(main_op_array);
@@ -258,7 +268,7 @@ static bool tc_can_keep_jump_tables(zend_file_handle *file_handle)
 	zend_string *resolved;
 	bool selected;
 
-	if (!tc_active) {
+	if (!tc_active || !tc_thread_is_owner()) {
 		return false;
 	}
 
@@ -319,6 +329,11 @@ void tc_op_array_dtor(zend_op_array *op_array)
 	tc_unit *unit = op_array->reserved[tc_slot];
 
 	if ((uintptr_t) unit <= (uintptr_t) TC_NO_PROBES) {
+		return;
+	}
+
+	/* ext-parallel copies op arrays to its threads together with the slot. The unit belongs to the owner thread. */
+	if (!tc_thread_is_owner()) {
 		return;
 	}
 

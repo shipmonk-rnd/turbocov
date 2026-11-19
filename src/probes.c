@@ -117,6 +117,10 @@ static int tc_probe_handler(zend_execute_data *execute_data)
 		return tc_forward(execute_data);
 	}
 
+	if (UNEXPECTED(tc_second_thread) && !tc_thread_is_owner()) {
+		return tc_forward(execute_data);
+	}
+
 	unit = func->op_array.reserved[tc_slot];
 
 	/* EG(exception_op) and op arrays that no compile hook saw are not in a unit. */
