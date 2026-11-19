@@ -1,6 +1,6 @@
 # turbocov – code coverage for PHP at near-native speed!
 
-- ⚡ **Ultrafast:** 400× less than Xdebug, 30× less overhead than PCOV
+- ⚡ **Ultrafast:** 400× less overhead than Xdebug, 30× less than PCOV
 - 🎯 **Focused:** Zero overhead for code you do not measure
 - 🍰 **Easy-to-use:** One `pie install`, one line in `phpunit.xml`
 - 🛡️ **Robust:** A broken setup stops the run with a clear message
