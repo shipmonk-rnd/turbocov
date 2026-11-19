@@ -8,7 +8,7 @@
     },
     "php-ext": {
         "extension-name": "turbocov",
-        "support-zts": false,
+        "support-zts": true,
         "os-families-exclude": [
             "windows"
         ],
