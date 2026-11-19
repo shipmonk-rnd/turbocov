@@ -8,15 +8,16 @@ on:
 
 jobs:
     tests:
-        name: PHP ${{ matrix.php-version }}, ${{ matrix.build }}${{ matrix.arch == 'arm64' && ', arm64' || '' }}
+        name: PHP ${{ matrix.php-version }}${{ matrix.thread-safety == 'zts' && ' ZTS' || '' }}, ${{ matrix.build }}${{ matrix.arch == 'arm64' && ', arm64' || '' }}
         runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
-        container: php:${{ matrix.php-version }}-cli
+        container: php:${{ matrix.php-version }}-${{ matrix.thread-safety == 'zts' && 'zts' || 'cli' }}
         strategy:
             fail-fast: false
             matrix:
                 php-version: [ '8.4', '8.5' ]
                 build: [ turbocov, pcov ]
                 arch: [ x86_64, arm64 ]
+                thread-safety: [ nts, zts ]
                 exclude:
                     -
                         build: pcov
