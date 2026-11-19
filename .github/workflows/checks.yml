@@ -32,6 +32,11 @@ jobs:
                 if: matrix.build == 'turbocov'
                 run: pecl install pcov-1.0.12 xdebug-3.5.3 > /dev/null
             -
+                # One test starts a second PHP thread with this extension.
+                name: Install parallel
+                if: matrix.build == 'turbocov' && matrix.thread-safety == 'zts'
+                run: pecl install parallel-1.2.15 > /dev/null
+            -
                 name: Build and test
                 run: dev/build-in-place.sh ${{ matrix.build }}
 
