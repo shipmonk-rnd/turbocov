@@ -127,7 +127,6 @@ Notes:
 - Not supported:
     - Windows
     - PHP-FPM and other web SAPIs
-    - More than one PHP thread in one process (ext-parallel, FrankenPHP). The functions then throw `CannotCollectException`.
 - Not tested yet:
     - macOS on Intel
 - Cannot run together with:
