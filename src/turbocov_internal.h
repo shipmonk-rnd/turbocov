@@ -25,10 +25,6 @@
 # error "turbocov needs PHP 8.4 or later"
 #endif
 
-#ifdef ZTS
-# error "turbocov does not support thread-safe PHP"
-#endif
-
 /* For the symbols that more than one source file uses. They are not part of the interface of the shared library. */
 #if defined(__GNUC__) && __GNUC__ >= 4
 # define TC_LOCAL __attribute__((visibility("hidden")))

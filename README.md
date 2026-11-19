@@ -126,7 +126,6 @@ Notes:
 
 - Not supported:
     - Windows
-    - Thread-safe PHP (ZTS)
     - PHP-FPM and other web SAPIs
 - Not tested yet:
     - macOS on Intel
