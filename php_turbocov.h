@@ -1,7 +1,7 @@
 #ifndef PHP_TURBOCOV_H
 #define PHP_TURBOCOV_H
 
-#define PHP_TURBOCOV_VERSION "0.1.0-dev"
+#define PHP_TURBOCOV_VERSION "0.1.0"
 
 /* PHPUnit selects its PCOV driver when an extension with the name "pcov" is loaded. */
 #ifdef TURBOCOV_IMPERSONATE_PCOV
