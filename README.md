@@ -16,7 +16,7 @@ turbocov collects **line coverage only**, no branch or path coverage.
 ### Precision
 
 turbocov is **more precise** than others for multi-line expressions.
-PCOV and Xdebug report [some lines](https://github.com/shipmonk-rnd/turbocov/pull/18) as covered even when PHP never executed those:
+PCOV and Xdebug report [some lines](https://github.com/shipmonk-rnd/turbocov/pull/18) as covered even when PHP never executed them:
 
 ```php
 return match ($a) {       // assume $a = 1;
