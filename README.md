@@ -9,14 +9,7 @@
 
 ![Time of the test suite of Carbon with each coverage driver](turbocov-performance.svg)
 
-|                             | turbocov | PCOV                 | Xdebug               |
-|-----------------------------|----------|----------------------|----------------------|
-| Time added to a test run*   | **+3 %** | +96 %                | +1,237 %             |
-| Line coverage               | ✅       | ✅                   | ✅                   |
-| Collect only selected files | ✅       | ⚠️ slow for the rest | ⚠️ slow for the rest |
-| Branch & path coverage      | ❌       | ❌                   | ✅                   |
-
-<sup><sub>\*Driver alone on the test suite of Carbon (6,349 tests). Run it yourself: [benchmark/](benchmark/README.md)</sub></sup>
+turbocov collects line coverage only, no branch or path coverage. Run the benchmark yourself: [benchmark/](benchmark/README.md)
 
 ## Installation
 
