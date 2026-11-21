@@ -115,7 +115,8 @@ static uint32_t tc_operand_line(const zend_cfg *cfg, int number, uint32_t last_l
 		return 0;
 	}
 
-	for (int i = 0; i < (block - 1)->successors_count; i++) {
+	/* The type of successors_count is int before PHP 8.6 and uint32_t since PHP 8.6. */
+	for (uint32_t i = 0; i < (uint32_t) (block - 1)->successors_count; i++) {
 		if ((block - 1)->successors[i] == number) {
 			return last_line;
 		}
