@@ -110,39 +110,7 @@ turbocov does not replace the instruction loop of PHP. Code without probes runs 
 
 **The problem:** PHPUnit before 13.3 cannot load a custom coverage driver. It only knows PCOV and Xdebug.
 
-**The hacky solution:** install turbocov in a mode where it pretends to be PCOV. PHPUnit then uses it without any change:
-
-```sh
-pie install shipmonk/turbocov --enable-turbocov-impersonate-pcov --skip-enable-extension
-```
-
-PIE cannot enable this build: it looks for an extension `turbocov`, and PHP lists this one as `pcov`. Add `extension=turbocov` to your `php.ini` yourself. `php --ri pcov` then prints `Registered as => pcov`.
-
-Then run PHPUnit the same way as with PCOV:
-
-```sh
-php -d pcov.directory=src vendor/bin/phpunit --coverage-html coverage
-```
-
-Notes:
-- You do not need `shipmonk/turbocov-phpunit` or the `driver` attribute in `phpunit.xml`.
-- Remove the real PCOV first. Both cannot be loaded at the same time.
-- `pcov.directory` is required. turbocov does not guess `src` like PCOV does.
-- This mode is a temporary aid, and a later version can remove it.
-
-On GitHub Actions, [setup-php](https://github.com/shivammathur/setup-php) adds the line to `php.ini`:
-
-```yaml
-- uses: shivammathur/setup-php@v2
-  with:
-    php-version: '8.5'
-    coverage: none
-    tools: pie
-    ini-values: extension=turbocov, pcov.directory=src
-- run: sudo pie install shipmonk/turbocov --enable-turbocov-impersonate-pcov --skip-enable-extension
-```
-
-The `pie` step prints one warning that PHP cannot load `turbocov`. That is expected: the line is in `php.ini` before the build.
+**The hacky solution:** install turbocov in a mode where it pretends to be PCOV. PHPUnit then uses it without any change. See [PCOV mode for older PHPUnit](docs/pcov-mode.md) for the steps.
 
 ## Limitations
 
