@@ -40,13 +40,13 @@ Tell PHPUnit to use it:
 <coverage driver="ShipMonk\Turbocov\TurbocovDriver"/>
 ```
 
-#### Full coverage:
+#### Full coverage
 
 ```bash
 php -d turbocov.collect_paths=src vendor/bin/phpunit --coverage-html coverage
 ```
 
-#### PR-only coverage:
+#### PR-only coverage
 
 Only want coverage for what your branch changed?
 
@@ -92,7 +92,7 @@ PCOV and Xdebug do work for each instruction that PHP executes. turbocov does wo
 
 turbocov does not replace the instruction loop of PHP. Code without probes runs as if the extension is not loaded.
 
-## Functions
+## API Functions
 
 ```php
 \turbocov\ensure_can_collect();      // throw \turbocov\CannotCollectException when the collection cannot work
