@@ -23,7 +23,7 @@ jobs:
                         build: pcov
                         arch: arm64
                     -
-                        # Each official image of PHP 8.6 is a thread-safe build. The "linux-nts" job tests the other build.
+                        # Each official image of PHP 8.6 is a thread-safe build.
                         php-version: '8.6'
                         thread-safety: nts
         steps:
@@ -32,57 +32,21 @@ jobs:
                 uses: actions/checkout@v6
             -
                 # Two tests need these extensions as files. No ini file loads them.
-                # PCOV and Xdebug have no release for PHP 8.6.
+                # The image of PHP 8.6 has no pecl command, and PCOV and Xdebug have no release for PHP 8.6.
                 name: Install PCOV and Xdebug
                 if: matrix.build == 'turbocov' && matrix.php-version != '8.6'
                 run: pecl install pcov-1.0.12 xdebug-3.5.3 > /dev/null
             -
-                # One test starts a second PHP thread with this extension.
+                # One test starts a second PHP thread with this extension. parallel 1.2.15 crashes on PHP 8.6.
                 name: Install parallel
                 if: matrix.build == 'turbocov' && matrix.thread-safety == 'zts' && matrix.php-version != '8.6'
                 run: pecl install parallel-1.2.15 > /dev/null
             -
-                # parallel 1.2.15 crashes on PHP 8.6, and the image of PHP 8.6 has no pecl command.
-                name: Install parallel from its development branch
-                if: matrix.build == 'turbocov' && matrix.php-version == '8.6'
-                run: |
-                    curl -fsSL "https://github.com/krakjoe/parallel/archive/$PARALLEL_COMMIT.tar.gz" | tar -xz -C /tmp
-                    cd "/tmp/parallel-$PARALLEL_COMMIT"
-                    phpize > /dev/null
-                    ./configure > /dev/null
-                    make -j"$(nproc)" > /dev/null
-                    make install > /dev/null
-                env:
-                    PARALLEL_COMMIT: 956f51d526d7681455b579103a631d12723eb72c
-            -
                 name: Build and test
                 run: dev/build-in-place.sh ${{ matrix.build }}
                 env:
-                    EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && matrix.php-version == '8.6' && '2' || '0' }}
-
-    linux-nts:
-        name: PHP ${{ matrix.php-version }} from setup-php, ${{ matrix.build }}
-        runs-on: ubuntu-latest
-        strategy:
-            fail-fast: false
-            matrix:
-                php-version: [ '8.6' ]
-                build: [ turbocov, pcov ]
-        steps:
-            -
-                name: Checkout code
-                uses: actions/checkout@v6
-            -
-                # Two tests need PCOV and Xdebug as files. "coverage: none" removes them from the ini files.
-                name: Setup PHP
-                uses: shivammathur/setup-php@v2
-                with:
-                    php-version: ${{ matrix.php-version }}
-                    extensions: pcov, xdebug
-                    coverage: none
-            -
-                name: Build and test
-                run: dev/build-in-place.sh ${{ matrix.build }}
+                    # The tests that load PCOV, Xdebug and parallel
+                    EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && matrix.php-version == '8.6' && '3' || '0' }}
 
     clang:
         name: PHP ${{ matrix.php-version }} built with Clang${{ matrix.arch == 'arm64' && ', arm64' || '' }}
