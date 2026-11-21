@@ -29,17 +29,22 @@ void tc_fill_ignored_opcodes(void)
 	/*
 	 * These opcodes only use the value of the expression that PHP compiled before them. Their own token has no operand after that expression.
 	 * An opcode with an operand after the expression must stay out: IS_SMALLER has its operands in reverse order for ">", FE_FETCH has "as $value".
+	 * MUL, the bitwise opcodes and the equality opcodes must stay out too: PHP swaps their operands when the first one is a temporary value
+	 * and the second one is a variable. Then "(expression) === $variable" looks the same as "$variable === (expression)".
 	 */
 	static const uint8_t first_operand[] = {
 		ZEND_JMPZ, ZEND_JMPNZ, ZEND_JMPZ_EX, ZEND_JMPNZ_EX, ZEND_JMP_SET, ZEND_COALESCE, ZEND_JMP_NULL,
-		ZEND_BOOL, ZEND_BOOL_NOT, ZEND_BW_NOT, ZEND_CAST, ZEND_QM_ASSIGN, ZEND_ECHO, ZEND_STRLEN, ZEND_COUNT,
+		ZEND_BW_NOT, ZEND_CAST, ZEND_QM_ASSIGN, ZEND_ECHO, ZEND_STRLEN, ZEND_COUNT,
+#if PHP_VERSION_ID >= 80500
+		/* Before PHP 8.5 the compiler also makes BOOL from "X == true" and BOOL_NOT from "X == false", where the token is after the expression. */
+		ZEND_BOOL, ZEND_BOOL_NOT,
+#endif
 		ZEND_RETURN, ZEND_RETURN_BY_REF, ZEND_GENERATOR_RETURN,
 		ZEND_INIT_ARRAY, ZEND_ADD_ARRAY_ELEMENT, ZEND_ADD_ARRAY_UNPACK, ZEND_FETCH_LIST_R,
 		ZEND_SEND_VAL_EX, ZEND_SEND_VAR_NO_REF, ZEND_SEND_VAR_NO_REF_EX,
 	};
 	static const uint8_t second_operand[] = {
-		ZEND_ADD, ZEND_SUB, ZEND_MUL, ZEND_DIV, ZEND_MOD, ZEND_SL, ZEND_SR, ZEND_CONCAT, ZEND_BW_OR, ZEND_BW_AND, ZEND_BW_XOR, ZEND_POW,
-		ZEND_BOOL_XOR, ZEND_IS_IDENTICAL, ZEND_IS_NOT_IDENTICAL, ZEND_IS_EQUAL, ZEND_IS_NOT_EQUAL,
+		ZEND_ADD, ZEND_SUB, ZEND_DIV, ZEND_MOD, ZEND_SL, ZEND_SR, ZEND_CONCAT, ZEND_POW,
 	};
 
 	for (size_t i = 0; i < sizeof(ignored); i++) {
@@ -119,6 +124,26 @@ static uint32_t tc_operand_line(const zend_cfg *cfg, int number, uint32_t last_l
 	return 0;
 }
 
+static bool tc_sends_argument(uint8_t opcode)
+{
+	switch (opcode) {
+		case ZEND_SEND_VAL:
+		case ZEND_SEND_VAL_EX:
+		case ZEND_SEND_VAR:
+		case ZEND_SEND_VAR_EX:
+		case ZEND_SEND_REF:
+		case ZEND_SEND_VAR_NO_REF:
+		case ZEND_SEND_VAR_NO_REF_EX:
+		case ZEND_SEND_FUNC_ARG:
+		case ZEND_SEND_UNPACK:
+		case ZEND_SEND_ARRAY:
+		case ZEND_SEND_USER:
+			return true;
+		default:
+			return false;
+	}
+}
+
 /* Checks the opcodes from the given one to the next opcode of a different line. */
 static bool tc_line_has_only_consumers(const zend_op *opline, const zend_op *end)
 {
@@ -157,6 +182,11 @@ static bool tc_line_has_only_consumers(const zend_op *opline, const zend_op *end
 		type = tc_consumer_operand[opline->opcode] == 1 ? opline->op1_type : (tc_consumer_operand[opline->opcode] == 2 ? opline->op2_type : 0);
 
 		if (!(type & (IS_TMP_VAR | IS_VAR))) {
+			return false;
+		}
+
+		/* A variable as the next argument is after the expression, and PHP can give its opcode the line of the first argument. */
+		if (tc_sends_argument(opline->opcode) && opline + 1 < end && tc_sends_argument((opline + 1)->opcode) && (opline + 1)->op1_type == IS_CV) {
 			return false;
 		}
 

@@ -92,6 +92,71 @@ function list_assign($a) {
     return $x + $y;
 }
 
+function and_in_if($a, $b, $c) {
+    if ($a
+        && $b
+        && $c
+    ) {
+        return 1;
+    }
+    return 0;
+}
+function else_if($a, $b, $c) {
+    if ($a === null) {
+        return 0;
+    } elseif ($a
+        || $b
+        || $c
+    ) {
+        return 1;
+    }
+    return 2;
+}
+function throwing_arm($a) {
+    return match ($a) {
+        1 => 'one',
+        default => throw new LogicException('none'),
+    };
+}
+enum SkippedOperandsSuit {
+    case Hearts;
+    case Spades;
+}
+function enum_arms(SkippedOperandsSuit $a) {
+    return match ($a) {
+        SkippedOperandsSuit::Hearts => 'red',
+        SkippedOperandsSuit::Spades => 'black',
+    };
+}
+function spread_match($a, $b) {
+    return [
+        ...$a,
+        ...match ($b) {
+            1 => ['one'],
+            2 => ['two'],
+        },
+    ];
+}
+function fallback_throw($a) {
+    return $a
+        ?: throw new LogicException('none');
+}
+function multi_line_else($a, $b) {
+    return $a
+        ? [1]
+        : [
+            $b,
+            3,
+        ];
+}
+function inner_ternary($a, $b) {
+    return strtoupper($a ?: (
+        $b
+            ? 'b'
+            : 'c'
+    ));
+}
+
 function break_after($a) {
     foreach ([1, 2] as $v) {
         $x = $a ? 1
@@ -119,4 +184,50 @@ function statement_after($a) {
 function taken($a, $b) {
     return $a
         || $b;
+}
+function equal_false_after($a, $b) {
+    return ($a
+        || $b) == false;
+}
+function equal_after($a, $b) {
+    return ($a
+        || $b) == true;
+}
+function identical_after($a, $b, $c) {
+    return ($a
+        || $b) === $c;
+}
+function multiply_after($a, $b) {
+    return ($a
+        ?? 1) * $b;
+}
+function plus_after($a, $b) {
+    return ($a
+        ?: 1) + $b;
+}
+function concat_after($a, $b) {
+    return ($a
+        ?? 'x') . $b;
+}
+function call_after($a) {
+    return strlen($a
+        ?? 'x') + strlen('yy');
+}
+function next_argument($a, $b, $c) {
+    return (new ArrayObject([]))->offsetSet($a
+        ?? $b, $c);
+}
+function assignment_line($a) {
+    $x =
+        $a ?? 'none';
+    return $x;
+}
+
+function negation($a, $b) {
+    return !($a
+        || $b);
+}
+function bool_cast($a, $b) {
+    return (bool) ($a
+        ?? $b);
 }
