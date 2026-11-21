@@ -7,7 +7,7 @@
 
 ## Comparison
 
-![Time that a coverage driver adds to the test suite of Carbon](turbocov-performance.svg)
+![Time of the test suite of Carbon with each coverage driver](turbocov-performance.svg)
 
 |                             | turbocov | PCOV                 | Xdebug               |
 |-----------------------------|----------|----------------------|----------------------|
