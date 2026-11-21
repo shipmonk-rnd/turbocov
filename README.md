@@ -11,7 +11,22 @@
 
 <sup><sub>Run the benchmark yourself: [benchmark/](benchmark/README.md)</sub></sup>
 
-turbocov collects **line coverage only**, no branch or path coverage. 
+turbocov collects **line coverage only**, no branch or path coverage.
+
+### Precision
+
+turbocov is more precise than PCOV and Xdebug for multi-line expressions.
+A line of a multi-line condition, ternary, `??` or `match` is covered only when its own code runs.
+PCOV and Xdebug also report such a line when PHP skips it:
+
+```php
+return match ($a) {       // call: f(1)
+    1 => 'one',
+    default => 'other',   // PCOV and Xdebug: covered, turbocov: not covered
+};
+```
+
+More examples: [#18](https://github.com/shipmonk-rnd/turbocov/pull/18).
 
 ## Installation
 
@@ -79,9 +94,6 @@ PCOV and Xdebug do work for each instruction that PHP executes. turbocov does wo
 5. `stop()` arms the fired probes again. The cost of a test run is in proportion to the number of lines that the test touched.
 
 turbocov does not replace the instruction loop of PHP. Code without probes runs as if the extension is not loaded.
-
-A line of a multi-line condition, ternary, `??` or `match` is reported only when its own code runs.
-PCOV and Xdebug also report such a line when PHP skips it: for example the `|| $b` line of a two-line `$a || $b` when `$a` is true.
 
 ## Functions
 
