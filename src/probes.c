@@ -123,7 +123,11 @@ static int tc_probe_handler(zend_execute_data *execute_data)
 
 	unit = func->op_array.reserved[tc_slot];
 
-	/* EG(exception_op) and op arrays that no compile hook saw are not in a unit. */
+	if (UNEXPECTED(!unit) && tc_adopt_op_array(&func->op_array, opline)) {
+		unit = func->op_array.reserved[tc_slot];
+	}
+
+	/* EG(exception_op) and code that has no probes are not in a unit. */
 	if (UNEXPECTED((uintptr_t) unit <= (uintptr_t) TC_NO_PROBES)
 		|| UNEXPECTED(opline < unit->opcodes)
 		|| UNEXPECTED(opline >= unit->opcodes + unit->last)) {

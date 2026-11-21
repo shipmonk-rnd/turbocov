@@ -20,6 +20,11 @@ uname -sm
 php -v
 php -n -r 'echo "VM kind: ", defined("ZEND_VM_KIND") ? ZEND_VM_KIND : "not reported by this PHP version", "\n";'
 
+# The tests of the syntax that only a newer PHP version has are in a directory of their own.
+if [ "$name" = "turbocov" ] && php -r 'exit(PHP_VERSION_ID >= 80600 ? 0 : 1);'; then
+    tests="$tests tests/php-8.6"
+fi
+
 phpize > /dev/null
 ./configure $flags > /dev/null
 make -j"$(getconf _NPROCESSORS_ONLN)" CFLAGS="-O2 -g -Wall -Wextra -Wno-unused-parameter -Werror ${CFLAGS:-}"

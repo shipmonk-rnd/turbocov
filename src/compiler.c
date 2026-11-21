@@ -115,7 +115,8 @@ static uint32_t tc_operand_line(const zend_cfg *cfg, int number, uint32_t last_l
 		return 0;
 	}
 
-	for (int i = 0; i < (block - 1)->successors_count; i++) {
+	/* The type of successors_count is int before PHP 8.6 and uint32_t since PHP 8.6. */
+	for (uint32_t i = 0; i < (uint32_t) (block - 1)->successors_count; i++) {
 		if ((block - 1)->successors[i] == number) {
 			return last_line;
 		}
@@ -216,7 +217,8 @@ static tc_unit *tc_install_probes(zend_op_array *op_array, tc_file *file)
 	memset(&cfg, 0, sizeof(zend_cfg));
 	zend_build_cfg(&arena, op_array, 0, &cfg);
 
-	for (int i = 0; i < cfg.blocks_count; i++) {
+	/* The type of blocks_count is int before PHP 8.6 and uint32_t since PHP 8.6. */
+	for (uint32_t i = 0; i < (uint32_t) cfg.blocks_count; i++) {
 		zend_basic_block *block = &cfg.blocks[i];
 		zend_op *opline = op_array->opcodes + block->start;
 		zend_op *end = opline + block->len;
@@ -338,6 +340,23 @@ static void tc_process_op_array(zend_op_array *op_array)
 	for (uint32_t i = 0; i < op_array->num_dynamic_func_defs; i++) {
 		tc_process_op_array(op_array->dynamic_func_defs[i]);
 	}
+}
+
+/*
+ * PHP 8.6 compiles the closure of a partial function application at run time, and the compile hooks do not see it.
+ * pass_two() gave each of its opcodes the ZEND_USER_OPCODE handler, thus its first opcode comes to the probe callback.
+ */
+bool tc_adopt_op_array(zend_op_array *op_array, const zend_op *opline)
+{
+	if (!tc_active || opline < op_array->opcodes || opline >= op_array->opcodes + op_array->last) {
+		return false;
+	}
+
+	tc_unregister_handlers();
+	tc_process_op_array(op_array);
+	tc_register_handlers();
+
+	return true;
 }
 
 static void tc_process_class(zend_class_entry *ce)

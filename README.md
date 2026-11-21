@@ -61,7 +61,7 @@ Execution of unlisted files has **zero overhead**!
 
 ## Requirements
 
-- PHP 8.4 or 8.5
+- PHP 8.4, 8.5 or 8.6
 - PHPUnit 13.3 or later. For older versions, see [Usage with older PHPUnit](#usage-with-older-phpunit).
 
 ## Settings

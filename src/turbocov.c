@@ -37,7 +37,7 @@ static PHP_MINIT_FUNCTION(turbocov)
 	REGISTER_INI_ENTRIES();
 	tc_threads_startup();
 
-	tc_ini_enabled = INI_BOOL(TURBOCOV_NAME ".enabled");
+	tc_ini_enabled = zend_ini_bool_literal(TURBOCOV_NAME ".enabled");
 
 	if (!tc_ini_enabled) {
 		snprintf(tc_off_reason, sizeof(tc_off_reason), TURBOCOV_NAME ".enabled is 0");

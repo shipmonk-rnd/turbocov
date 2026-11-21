@@ -25,6 +25,13 @@
 # error "turbocov needs PHP 8.4 or later"
 #endif
 
+/* PHP 8.6 removed INI_BOOL(), INI_INT() and INI_STR(). These are the names that PHP 8.6 gives instead. */
+#if PHP_VERSION_ID < 80600
+# define zend_ini_bool_literal(name)   INI_BOOL(name)
+# define zend_ini_long_literal(name)   INI_INT(name)
+# define zend_ini_string_literal(name) INI_STR(name)
+#endif
+
 /* For the symbols that more than one source file uses. They are not part of the interface of the shared library. */
 #if defined(__GNUC__) && __GNUC__ >= 4
 # define TC_LOCAL __attribute__((visibility("hidden")))
@@ -135,6 +142,7 @@ TC_LOCAL void tc_fill_ignored_opcodes(void);
 TC_LOCAL void tc_install(void);
 TC_LOCAL void tc_compiler_activate(void);
 TC_LOCAL void tc_compiler_deactivate(void);
+TC_LOCAL bool tc_adopt_op_array(zend_op_array *op_array, const zend_op *opline);
 TC_LOCAL void tc_op_array_dtor(zend_op_array *op_array);
 
 /* paths.c: the settings that select the files */
