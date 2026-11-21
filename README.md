@@ -15,18 +15,15 @@ turbocov collects **line coverage only**, no branch or path coverage.
 
 ### Precision
 
-turbocov is more precise than PCOV and Xdebug for multi-line expressions.
-A line of a multi-line condition, ternary, `??` or `match` is covered only when its own code runs.
-PCOV and Xdebug also report such a line when PHP skips it:
+turbocov is **more precise** than others for multi-line expressions.
+PCOV and Xdebug report [some lines](https://github.com/shipmonk-rnd/turbocov/pull/18) as covered even when PHP never executed those:
 
 ```php
-return match ($a) {       // call: f(1)
+return match ($a) {       // assume $a = 1;
     1 => 'one',
     default => 'other',   // PCOV and Xdebug: covered, turbocov: not covered
 };
 ```
-
-More examples: [#18](https://github.com/shipmonk-rnd/turbocov/pull/18).
 
 ## Installation
 
