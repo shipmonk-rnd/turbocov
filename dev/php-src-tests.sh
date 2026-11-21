@@ -14,13 +14,16 @@ shift 2
 [ $# -gt 0 ] || set -- Zend/tests tests ext/opcache/tests ext/reflection/tests ext/spl/tests ext/standard/tests
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-extension="$(cd "$(dirname "${TURBOCOV_SO:-$root/modules/turbocov.so}")" && pwd)/$(basename "${TURBOCOV_SO:-turbocov.so}")"
+extension="${TURBOCOV_SO:-$root/modules/turbocov.so}"
+[ -f "$extension" ] || { echo "$extension does not exist. Build turbocov first." >&2; exit 1; }
+extension="$(cd "$(dirname "$extension")" && pwd)/$(basename "$extension")"
+
 jobs="${JOBS:-$(getconf _NPROCESSORS_ONLN)}"
 work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
 tree="$work/php-src"
 log="$work/collection.log"
-
-[ -f "$extension" ] || { echo "$extension does not exist. Build turbocov first." >&2; exit 1; }
+: > "$log"
 
 curl -fsSL "https://www.php.net/distributions/php-$version.tar.xz" -o "$work/php.tar.xz"
 echo "$sha256  $work/php.tar.xz" | sha256sum -c - > /dev/null
@@ -51,14 +54,26 @@ run() {
     (cd "$tree" && NO_INTERACTION=1 SKIP_SLOW_TESTS=1 TEST_PHP_EXECUTABLE="$(command -v php)" TURBOCOV_PHP_SRC_TESTS_LOG="$log" \
         php run-tests.php -q -j"$jobs" $options -W "$work/$name.unsorted" "$@" > "$work/$name.log" 2>&1) || true
 
-    [ -s "$work/$name.unsorted" ] || { tail -30 "$work/$name.log"; echo "The run \"$name\" gave no results." >&2; exit 1; }
+    # run-tests.php prints its summary only when all tests ran. Without it, the list of results is not complete.
+    if [ ! -s "$work/$name.unsorted" ] || ! grep -q '^Number of tests' "$work/$name.log"; then
+        tail -30 "$work/$name.log"
+        echo "The run \"$name\" did not finish." >&2
+        exit 1
+    fi
+
     sed "s|	$tree/|	|" "$work/$name.unsorted" | sort -t "$(printf '\t')" -k 2 > "$work/$name.txt"
     echo "$name: $(cut -f 1 "$work/$name.txt" | sort | uniq -c | tr -s ' \n' ' ')"
 }
 
 # differences <name of the run without turbocov> <name of the run with turbocov>: prints "<test><tab><result> -> <result>".
+# A test that only one run has is a difference too.
 differences() {
-    awk -F '\t' 'NR == FNR { without[$2] = $1; next } without[$2] != $1 { print $2 "\t" without[$2] " -> " $1 }' "$work/$1.txt" "$work/$2.txt"
+    awk -F '\t' '
+        NR == FNR { without[$2] = $1; next }
+        { seen[$2] = 1 }
+        without[$2] != $1 { print $2 "\t" ($2 in without ? without[$2] : "no result") " -> " $1 }
+        END { for (test in without) if (!(test in seen)) print test "\t" without[test] " -> no result" }
+    ' "$work/$1.txt" "$work/$2.txt"
 }
 
 php -v | head -1
@@ -68,15 +83,16 @@ run without "" "$@"
 unpack "$@"
 run with turbocov "$@"
 
-collected="$(grep -c '^collected$' "$log" || true)"
+# The skip script and the clean script of a test are PHP processes too. They do not count.
+collected="$(grep '^collected ' "$log" | grep -c -v -E '\.(skip|clean)\.php$' || true)"
 passed="$(grep -c '^PASSED' "$work/with.txt" || true)"
-echo "turbocov collected in $collected PHP processes."
+echo "turbocov reported executed lines in $collected of the $passed tests that pass."
 
 status=0
 
-# A defect that turns the collection off in most tests would make this check pass with no meaning.
+# A defect that turns the collection off, or that installs no probes, would make this check pass with no meaning.
 if [ "$collected" -lt "$((passed / 2))" ]; then
-    echo "turbocov must collect in most of the $passed tests that pass." >&2
+    echo "turbocov must report executed lines in most of the tests that pass." >&2
     status=1
 fi
 
@@ -91,8 +107,10 @@ differences without with > "$work/differences.txt"
 if [ -s "$work/differences.txt" ]; then
     echo "$(wc -l < "$work/differences.txt") tests differ. Second run of these tests:"
     tests="$(cut -f 1 "$work/differences.txt" | tr '\n' ' ')"
+    unpack "$@"
     # shellcheck disable=SC2086
     run without-again "" $tests
+    unpack "$@"
     # shellcheck disable=SC2086
     run with-again turbocov $tests
     differences without-again with-again > "$work/differences.txt"
@@ -111,5 +129,4 @@ if [ -s "$work/differences.txt" ]; then
 fi
 
 [ "$status" = 0 ] && echo "turbocov does not change the result of a test."
-rm -rf "$work"
 exit "$status"

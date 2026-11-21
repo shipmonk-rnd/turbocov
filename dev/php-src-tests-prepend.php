@@ -13,8 +13,15 @@ function __turbocov_php_src_tests_end(): void
     $log = getenv('TURBOCOV_PHP_SRC_TESTS_LOG');
     $executed = \turbocov\stop();
 
+    // A test can start a PHP process with an empty environment. Some tests disable functions, so this file calls only a few.
+    if ($log === false || $log === '') {
+        return;
+    }
+
     // "@": a test with open_basedir or chroot() cannot write the log, and a warning changes its output.
-    @file_put_contents($log, "collected\n", FILE_APPEND);
+    if ($executed !== []) {
+        @file_put_contents($log, 'collected ' . ($_SERVER['SCRIPT_FILENAME'] ?? '') . "\n", FILE_APPEND);
+    }
 
     foreach ($executed as $file => $lines) {
         $executable = \turbocov\get_executable_lines([$file])[$file] ?? [];
