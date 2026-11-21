@@ -155,7 +155,7 @@ The scripts in `dev/` need Docker.
 ```sh
 RUN_TESTS=1 dev/build.sh 8.5                 # build and run the tests
 dev/build.sh 8.5 pcov                        # build with the name pcov
-dev/compare-with-pcov.sh 8.5 path/File.php   # compare the line data with PCOV
+dev/compare-with-pcov.sh 8.5 path/File.php   # check the line data against PCOV
 dev/bench.sh 8.5                             # compare the speed with plain PHP and PCOV
 ```
 
