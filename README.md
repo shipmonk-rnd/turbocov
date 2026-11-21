@@ -50,7 +50,7 @@ php -d turbocov.collect_paths=@changed.txt vendor/bin/phpunit --coverage-clover 
 
 Execution of unlisted files has **zero overhead**!
 
-<sub>This is handy for [GitLab coverage vizualization](https://docs.gitlab.com/ci/testing/code_coverage/#coverage-visualization)</sub>
+<sub>This is handy for [GitLab coverage vizualization](https://docs.gitlab.com/ci/testing/code_coverage/#coverage-visualization) or [**Coverage Guard** rules in your CI](https://github.com/shipmonk-rnd/coverage-guard)</sub>
 
 ## Requirements
 
