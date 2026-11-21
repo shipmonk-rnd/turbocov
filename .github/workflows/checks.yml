@@ -172,6 +172,16 @@ jobs:
                     # PCOV and Xdebug are not in this PHP build
                     EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && '2' || '0' }}
                     RUN_TESTS_FLAGS: --asan
+            -
+                # turbocov changes the opcode handlers of each file that PHP compiles. The tests of PHP show when that changes what PHP does.
+                name: Run the tests of PHP without and with turbocov
+                if: matrix.build == 'turbocov'
+                run: |
+                    export PATH="/opt/php/bin:$PATH"
+                    dev/php-src-tests.sh ${{ matrix.php-version }} ${{ matrix.sha256 }}
+                env:
+                    # turbocov does not free its tables at the end of the process. A later change does that.
+                    ASAN_OPTIONS: detect_leaks=0
 
     macos:
         name: PHP ${{ matrix.php-version }}, turbocov, macOS arm64
