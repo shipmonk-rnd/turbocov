@@ -80,6 +80,9 @@ PCOV and Xdebug do work for each instruction that PHP executes. turbocov does wo
 
 turbocov does not replace the instruction loop of PHP. Code without probes runs as if the extension is not loaded.
 
+A line of a multi-line condition, ternary, `??` or `match` is reported only when its own code runs.
+PCOV and Xdebug report such a line also when PHP skips it, for example the second line of `$a\n|| $b` when `$a` is true.
+
 ## Functions
 
 ```php
