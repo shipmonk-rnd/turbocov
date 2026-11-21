@@ -9,7 +9,9 @@
 
 ![Time of the test suite of Carbon with each coverage driver](turbocov-performance.svg)
 
-turbocov collects line coverage only, no branch or path coverage. Run the benchmark yourself: [benchmark/](benchmark/README.md)
+<sup><sub>Run the benchmark yourself: [benchmark/](benchmark/README.md)</sub></sup>
+
+turbocov collects **line coverage only**, no branch or path coverage. 
 
 ## Installation
 
