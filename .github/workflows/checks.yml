@@ -10,11 +10,11 @@ jobs:
     tests:
         name: PHP ${{ matrix.php-version }}${{ matrix.thread-safety == 'zts' && ' ZTS' || '' }}, ${{ matrix.build }}${{ matrix.arch == 'arm64' && ', arm64' || '' }}
         runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
-        container: php:${{ matrix.php-version }}-${{ matrix.thread-safety == 'zts' && 'zts' || 'cli' }}
+        container: php:${{ matrix.php-version }}-${{ matrix.thread-safety == 'zts' && matrix.php-version != '8.6' && 'zts' || 'cli' }}
         strategy:
             fail-fast: false
             matrix:
-                php-version: [ '8.4', '8.5' ]
+                php-version: [ '8.4', '8.5', '8.6' ]
                 build: [ turbocov, pcov ]
                 arch: [ x86_64, arm64 ]
                 thread-safety: [ nts, zts ]
@@ -22,20 +22,64 @@ jobs:
                     -
                         build: pcov
                         arch: arm64
+                    -
+                        # Each official image of PHP 8.6 is a thread-safe build. The "linux-nts" job tests the other build.
+                        php-version: '8.6'
+                        thread-safety: nts
         steps:
             -
                 name: Checkout code
                 uses: actions/checkout@v6
             -
                 # Two tests need these extensions as files. No ini file loads them.
+                # PCOV and Xdebug have no release for PHP 8.6.
                 name: Install PCOV and Xdebug
-                if: matrix.build == 'turbocov'
+                if: matrix.build == 'turbocov' && matrix.php-version != '8.6'
                 run: pecl install pcov-1.0.12 xdebug-3.5.3 > /dev/null
             -
                 # One test starts a second PHP thread with this extension.
                 name: Install parallel
-                if: matrix.build == 'turbocov' && matrix.thread-safety == 'zts'
+                if: matrix.build == 'turbocov' && matrix.thread-safety == 'zts' && matrix.php-version != '8.6'
                 run: pecl install parallel-1.2.15 > /dev/null
+            -
+                # parallel 1.2.15 crashes on PHP 8.6, and the image of PHP 8.6 has no pecl command.
+                name: Install parallel from its development branch
+                if: matrix.build == 'turbocov' && matrix.php-version == '8.6'
+                run: |
+                    curl -fsSL "https://github.com/krakjoe/parallel/archive/$PARALLEL_COMMIT.tar.gz" | tar -xz -C /tmp
+                    cd "/tmp/parallel-$PARALLEL_COMMIT"
+                    phpize > /dev/null
+                    ./configure > /dev/null
+                    make -j"$(nproc)" > /dev/null
+                    make install > /dev/null
+                env:
+                    PARALLEL_COMMIT: 956f51d526d7681455b579103a631d12723eb72c
+            -
+                name: Build and test
+                run: dev/build-in-place.sh ${{ matrix.build }}
+                env:
+                    EXPECT_SKIPS: ${{ matrix.build == 'turbocov' && matrix.php-version == '8.6' && '2' || '0' }}
+
+    linux-nts:
+        name: PHP ${{ matrix.php-version }} from setup-php, ${{ matrix.build }}
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php-version: [ '8.6' ]
+                build: [ turbocov, pcov ]
+        steps:
+            -
+                name: Checkout code
+                uses: actions/checkout@v6
+            -
+                # Two tests need PCOV and Xdebug as files. "coverage: none" removes them from the ini files.
+                name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-version }}
+                    extensions: pcov, xdebug
+                    coverage: none
             -
                 name: Build and test
                 run: dev/build-in-place.sh ${{ matrix.build }}
@@ -47,7 +91,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-version: [ 8.4.27, 8.5.12 ]
+                php-version: [ 8.4.27, 8.5.12, 8.6.0 ]
                 arch: [ x86_64, arm64 ]
                 include:
                     -
@@ -56,6 +100,9 @@ jobs:
                     -
                         php-version: 8.5.12
                         sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
+                    -
+                        php-version: 8.6.0
+                        sha256: 5f84beaa3d763aee1e4feed99bf54ec692c383b322e25626807b589238c3a087
         env:
             CC: clang
         steps:
@@ -88,88 +135,6 @@ jobs:
                     # PCOV and Xdebug are not in this PHP build
                     EXPECT_SKIPS: 2
 
-    php-86:
-        name: PHP 8.6 built with ${{ matrix.name }}
-        runs-on: ubuntu-latest
-        container: debian:trixie
-        strategy:
-            fail-fast: false
-            matrix:
-                include:
-                    -
-                        name: GCC
-                        id: gcc
-                        compiler: gcc
-                        packages: gcc libc6-dev
-                    -
-                        name: Clang
-                        id: clang
-                        compiler: clang
-                        packages: clang
-                    -
-                        name: GCC, debug build with AddressSanitizer
-                        id: gcc-debug-asan
-                        compiler: gcc
-                        packages: gcc libc6-dev
-                        configure: --enable-debug --enable-address-sanitizer
-                        # PHP with AddressSanitizer has a different zend_arena. An extension must have the same define.
-                        cflags: -fsanitize=address -fno-omit-frame-pointer -DZEND_TRACK_ARENA_ALLOC
-                        ldflags: -fsanitize=address
-        env:
-            # The official images of PHP 8.6 are thread-safe builds, which turbocov does not support.
-            # For a final release, change the version and the checksum, and remove PHP_URL.
-            PHP_VERSION: 8.6.0RC7
-            PHP_SHA256: 63dba3b693d2f2689f12d5264d212d7b813acfd56fb375c620d04e1eef4bb00a
-            PHP_URL: https://downloads.php.net/~svpernova09/php-8.6.0RC7.tar.xz
-            CC: ${{ matrix.compiler }}
-            # turbocov does not free its tables at the end of the process. A later change does that.
-            ASAN_OPTIONS: detect_leaks=0
-        steps:
-            -
-                name: Install build tools
-                run: |
-                    apt-get update -qq
-                    apt-get install -y -qq --no-install-recommends ${{ matrix.packages }} make autoconf libtool pkg-config ca-certificates curl xz-utils tar zstd > /dev/null
-            -
-                name: Checkout code
-                uses: actions/checkout@v6
-            -
-                name: Cache PHP
-                id: cache-php
-                uses: actions/cache@v5
-                with:
-                    path: /opt/php
-                    key: php-${{ env.PHP_VERSION }}-${{ matrix.id }}-${{ hashFiles('dev/build-php.sh') }}
-            -
-                name: Build PHP
-                if: steps.cache-php.outputs.cache-hit != 'true'
-                run: dev/build-php.sh "$PHP_VERSION" "$PHP_SHA256" /opt/php ${{ matrix.configure }}
-            -
-                name: Build and test
-                run: |
-                    export PATH="/opt/php/bin:$PATH"
-                    $CC --version
-                    php -v
-                    php -r 'echo ZEND_VM_KIND, PHP_EOL;'
-                    # PCOV and Xdebug are not in this PHP build
-                    EXPECT_SKIPS=2 dev/build-in-place.sh turbocov
-                    dev/build-in-place.sh pcov
-                env:
-                    CFLAGS: ${{ matrix.cflags }}
-                    LDFLAGS: ${{ matrix.ldflags }}
-            -
-                # --asan turns the memory manager of PHP off, so AddressSanitizer sees each allocation.
-                name: Test without the memory manager of PHP
-                if: matrix.cflags
-                run: |
-                    export PATH="/opt/php/bin:$PATH"
-                    EXPECT_SKIPS=2 dev/build-in-place.sh turbocov
-                    dev/build-in-place.sh pcov
-                env:
-                    CFLAGS: ${{ matrix.cflags }}
-                    LDFLAGS: ${{ matrix.ldflags }}
-                    RUN_TESTS_FLAGS: --asan
-
     sanitizers:
         name: PHP ${{ matrix.php-version }} debug build with AddressSanitizer, ${{ matrix.build }}${{ matrix.arch == 'arm64' && ', arm64' || '' }}
         runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
@@ -177,6 +142,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
+                php-version: [ 8.5.12, 8.6.0 ]
                 build: [ turbocov, pcov ]
                 arch: [ x86_64, arm64 ]
                 exclude:
@@ -187,6 +153,9 @@ jobs:
                     -
                         php-version: 8.5.12
                         sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
+                    -
+                        php-version: 8.6.0
+                        sha256: 5f84beaa3d763aee1e4feed99bf54ec692c383b322e25626807b589238c3a087
         env:
             # Clang cannot build the tail-call VM of PHP 8.5 with AddressSanitizer.
             CC: gcc
@@ -246,7 +215,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-version: [ '8.4', '8.5' ]
+                php-version: [ '8.4', '8.5', '8.6' ]
         steps:
             -
                 name: Checkout code
