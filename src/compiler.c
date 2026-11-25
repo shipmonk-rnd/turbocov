@@ -45,6 +45,7 @@ void tc_fill_ignored_opcodes(void)
 	};
 	static const uint8_t second_operand[] = {
 		ZEND_ADD, ZEND_SUB, ZEND_DIV, ZEND_MOD, ZEND_SL, ZEND_SR, ZEND_CONCAT, ZEND_POW,
+		ZEND_INIT_DYNAMIC_CALL, ZEND_INIT_METHOD_CALL, ZEND_INIT_STATIC_METHOD_CALL,
 	};
 
 	for (size_t i = 0; i < sizeof(ignored); i++) {

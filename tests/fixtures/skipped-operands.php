@@ -156,6 +156,22 @@ function inner_ternary($a, $b) {
             : 'c'
     ));
 }
+function match_callee($a) {
+    return (match ($a) {
+        1 => static fn () => 'one',
+        default => throw new LogicException('none'),
+    })(
+        'x',
+    );
+}
+function method_name($a, $b) {
+    return $a->{$b
+        ?? 'count'}();
+}
+function static_method_name($a) {
+    return DateTime::{$a
+        ?? 'createFromFormat'}();
+}
 
 function break_after($a) {
     foreach ([1, 2] as $v) {
@@ -221,6 +237,18 @@ function assignment_line($a) {
     $x =
         $a ?? 'none';
     return $x;
+}
+function callee_argument($a, $b) {
+    return ($a
+        ?? 'strtolower')($b);
+}
+function method_name_argument($a, $b, $c) {
+    return $a->{$b
+        ?? 'offsetExists'}($c);
+}
+function method_of_result($a, $b) {
+    return ($a
+        ?? $b)->count();
 }
 
 function negation($a, $b) {
