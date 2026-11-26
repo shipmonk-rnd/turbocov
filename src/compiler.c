@@ -377,6 +377,7 @@ static void tc_process_class(zend_class_entry *ce)
 		}
 	} ZEND_HASH_FOREACH_END();
 
+#if PHP_VERSION_ID >= 80400
 	if (ce->num_hooked_props > 0) {
 		zend_property_info *property;
 
@@ -392,6 +393,7 @@ static void tc_process_class(zend_class_entry *ce)
 			}
 		} ZEND_HASH_FOREACH_END();
 	}
+#endif
 }
 
 static void tc_after_compile(zend_op_array *main_op_array, uint32_t first_function, uint32_t first_class)

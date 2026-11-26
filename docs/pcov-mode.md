@@ -4,6 +4,8 @@ PHPUnit before 13.3 cannot load a custom coverage driver. It selects its PCOV dr
 
 turbocov has a build option that registers the extension with that name. PHPUnit then uses turbocov and needs no change. You do not need `shipmonk/turbocov-phpunit` or the `driver` attribute in `phpunit.xml`.
 
+On PHP 8.3, use this mode with PHPUnit 12. The direct use of turbocov needs PHPUnit 13.3, which needs PHP 8.4 or later.
+
 This mode is a temporary aid, and a later version can remove it.
 
 ## Install

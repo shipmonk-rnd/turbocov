@@ -79,6 +79,7 @@ static void tc_debug_units(zval *units, tc_file *file)
 			tc_debug_visit(units, &seen, file, &function->op_array);
 		} ZEND_HASH_FOREACH_END();
 
+#if PHP_VERSION_ID >= 80400
 		if (ce->num_hooked_props) {
 			zend_property_info *property;
 
@@ -92,6 +93,7 @@ static void tc_debug_units(zval *units, tc_file *file)
 				}
 			} ZEND_HASH_FOREACH_END();
 		}
+#endif
 	} ZEND_HASH_FOREACH_END();
 
 	/* The code of a file outside of all functions, and the closures in it, are in no table. */

@@ -14,7 +14,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-version: [ '8.4', '8.5', '8.6' ]
+                php-version: [ '8.3', '8.4', '8.5', '8.6' ]
                 build: [ turbocov, pcov ]
                 arch: [ x86_64, arm64 ]
                 thread-safety: [ nts, zts ]
@@ -55,9 +55,12 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-version: [ 8.4.27, 8.5.12, 8.6.0 ]
+                php-version: [ 8.3.37, 8.4.27, 8.5.12, 8.6.0 ]
                 arch: [ x86_64, arm64 ]
                 include:
+                    -
+                        php-version: 8.3.37
+                        sha256: 0237af84478b7a7649d3964153f1b8653d622550b846f56d63062de683fb86bb
                     -
                         php-version: 8.4.27
                         sha256: dcf93923b0e38e0d5252b25b796520b5a47761a08b3488b6d0b5d1115764d3f0
@@ -106,7 +109,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-version: [ 8.5.12, 8.6.0 ]
+                php-version: [ 8.3.37, 8.5.12, 8.6.0 ]
                 build: [ turbocov, pcov ]
                 arch: [ x86_64, arm64 ]
                 exclude:
@@ -114,6 +117,9 @@ jobs:
                         build: pcov
                         arch: arm64
                 include:
+                    -
+                        php-version: 8.3.37
+                        sha256: 0237af84478b7a7649d3964153f1b8653d622550b846f56d63062de683fb86bb
                     -
                         php-version: 8.5.12
                         sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209
@@ -189,7 +195,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-version: [ '8.4', '8.5', '8.6' ]
+                php-version: [ '8.3', '8.4', '8.5', '8.6' ]
         steps:
             -
                 name: Checkout code
@@ -213,6 +219,9 @@ jobs:
             fail-fast: false
             matrix:
                 include:
+                    -
+                        php-version: 8.3.37
+                        sha256: 0237af84478b7a7649d3964153f1b8653d622550b846f56d63062de683fb86bb
                     -
                         php-version: 8.5.12
                         sha256: 08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209

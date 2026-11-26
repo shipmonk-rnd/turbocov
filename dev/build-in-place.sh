@@ -21,8 +21,12 @@ php -v
 php -n -r 'echo "VM kind: ", defined("ZEND_VM_KIND") ? ZEND_VM_KIND : "not reported by this PHP version", "\n";'
 
 # The tests of the syntax that only a newer PHP version has are in a directory of their own.
-if [ "$name" = "turbocov" ] && php -r 'exit(PHP_VERSION_ID >= 80600 ? 0 : 1);'; then
-    tests="$tests tests/php-8.6"
+if [ "$name" = "turbocov" ]; then
+    for version in 8.4 8.6; do
+        if php -r 'exit(version_compare(PHP_VERSION, $argv[1], ">=") ? 0 : 1);' "$version"; then
+            tests="$tests tests/php-$version"
+        fi
+    done
 fi
 
 phpize > /dev/null

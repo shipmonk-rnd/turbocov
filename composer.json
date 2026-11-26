@@ -4,7 +4,7 @@
     "type": "php-ext",
     "license": "MIT",
     "require": {
-        "php": "~8.4.0 || ~8.5.0 || ~8.6.0"
+        "php": "~8.3.0 || ~8.4.0 || ~8.5.0 || ~8.6.0"
     },
     "php-ext": {
         "extension-name": "turbocov",

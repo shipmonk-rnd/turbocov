@@ -2,11 +2,17 @@
 Property hooks report their lines
 --EXTENSIONS--
 turbocov
+--SKIPIF--
+<?php
+if (PHP_VERSION_ID < 80400) {
+    die('skip PHP before 8.4 has no property hooks');
+}
+?>
 --INI--
-turbocov.collect_paths={PWD}/fixtures
+turbocov.collect_paths={PWD}/../fixtures
 --FILE--
 <?php
-$file = __DIR__ . '/fixtures/property-hooks.php';
+$file = dirname(__DIR__) . '/fixtures/property-hooks.php';
 
 ob_start();
 \turbocov\start();

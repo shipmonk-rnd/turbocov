@@ -61,8 +61,8 @@ Execution of unlisted files has **zero overhead**!
 
 ## Requirements
 
-- PHP 8.4, 8.5 or 8.6
-- PHPUnit 13.3 or later. For older versions, see [Usage with older PHPUnit](#usage-with-older-phpunit).
+- PHP 8.3, 8.4, 8.5 or 8.6
+- PHPUnit 13.3 or later can use turbocov directly and requires PHP 8.4 or later. With older PHPUnit versions, use [PCOV compatibility mode](docs/pcov-mode.md). On PHP 8.3, use PHPUnit 12 in this mode.
 
 ## Settings
 

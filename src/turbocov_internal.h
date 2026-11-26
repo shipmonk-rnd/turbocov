@@ -21,8 +21,8 @@
 
 #include "php_turbocov.h"
 
-#if PHP_VERSION_ID < 80400
-# error "turbocov needs PHP 8.4 or later"
+#if PHP_VERSION_ID < 80300
+# error "turbocov needs PHP 8.3 or later"
 #endif
 
 /* PHP 8.6 removed INI_BOOL(), INI_INT() and INI_STR(). These are the names that PHP 8.6 gives instead. */

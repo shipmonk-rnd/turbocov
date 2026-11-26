@@ -10,7 +10,7 @@ static tc_paths tc_exclude_paths;
 static pcre_cache_entry *tc_exclude_pattern;
 
 /* Returns the entry of the list that has the file: the file itself or one of its parent directories. */
-static zend_string *tc_paths_find(const tc_paths *paths, zend_string *filename)
+static zend_string *tc_paths_find(tc_paths *paths, zend_string *filename)
 {
 	zend_string *directory;
 
@@ -35,7 +35,12 @@ static bool tc_matches_exclude_pattern(zend_string *filename)
 
 	ZVAL_UNDEF(&match);
 
+#if PHP_VERSION_ID < 80400
+	/* PHP 8.3 takes an extra use_flags argument. */
+	php_pcre_match_impl(tc_exclude_pattern, filename, &match, NULL, 0, 0, 0, 0);
+#else
 	php_pcre_match_impl(tc_exclude_pattern, filename, &match, NULL, false, 0, 0);
+#endif
 
 	excluded = zend_is_true(&match);
 	zval_ptr_dtor(&match);
