@@ -17,12 +17,15 @@ static zend_op_array *(*tc_orig_compile_string)(zend_string *source_string, cons
 
 void tc_fill_ignored_opcodes(void)
 {
-	/* The list of PCOV, so that both drivers report the same executable lines. */
+	/*
+	 * The list of PCOV without VERIFY_RETURN_TYPE, FAST_CALL and DECLARE_ANON_CLASS. These three can throw or jump away
+	 * before the next opcode of their line runs. Their line always has one more opcode, thus the executable lines are the same as in PCOV.
+	 */
 	static const uint8_t ignored[] = {
-		ZEND_NOP, ZEND_OP_DATA, ZEND_FE_FREE, ZEND_FREE, ZEND_ASSERT_CHECK, ZEND_VERIFY_RETURN_TYPE,
+		ZEND_NOP, ZEND_OP_DATA, ZEND_FE_FREE, ZEND_FREE, ZEND_ASSERT_CHECK,
 		ZEND_RECV, ZEND_RECV_INIT, ZEND_RECV_VARIADIC, ZEND_SEND_VAL, ZEND_SEND_VAR_EX, ZEND_SEND_REF,
 		ZEND_SEND_UNPACK, ZEND_DECLARE_CONST, ZEND_DECLARE_CLASS, ZEND_DECLARE_CLASS_DELAYED,
-		ZEND_DECLARE_FUNCTION, ZEND_DECLARE_ANON_CLASS, ZEND_FAST_RET, ZEND_FAST_CALL, ZEND_TICKS,
+		ZEND_DECLARE_FUNCTION, ZEND_FAST_RET, ZEND_TICKS,
 		ZEND_EXT_STMT, ZEND_EXT_FCALL_BEGIN, ZEND_EXT_FCALL_END, ZEND_EXT_NOP, ZEND_BIND_GLOBAL,
 	};
 
@@ -39,7 +42,7 @@ void tc_fill_ignored_opcodes(void)
 		/* Before PHP 8.5 the compiler also makes BOOL from "X == true" and BOOL_NOT from "X == false", where the token is after the expression. */
 		ZEND_BOOL, ZEND_BOOL_NOT,
 #endif
-		ZEND_RETURN, ZEND_RETURN_BY_REF, ZEND_GENERATOR_RETURN,
+		ZEND_VERIFY_RETURN_TYPE, ZEND_RETURN, ZEND_RETURN_BY_REF, ZEND_GENERATOR_RETURN,
 		ZEND_INIT_ARRAY, ZEND_ADD_ARRAY_ELEMENT, ZEND_ADD_ARRAY_UNPACK, ZEND_FETCH_LIST_R,
 		ZEND_SEND_VAL_EX, ZEND_SEND_VAR_NO_REF, ZEND_SEND_VAR_NO_REF_EX,
 	};
