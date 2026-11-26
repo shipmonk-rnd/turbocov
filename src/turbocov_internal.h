@@ -142,8 +142,18 @@ TC_LOCAL void tc_fill_ignored_opcodes(void);
 TC_LOCAL void tc_install(void);
 TC_LOCAL void tc_compiler_activate(void);
 TC_LOCAL void tc_compiler_deactivate(void);
+TC_LOCAL void tc_process_op_array(zend_op_array *op_array);
 TC_LOCAL bool tc_adopt_op_array(zend_op_array *op_array, const zend_op *opline);
 TC_LOCAL void tc_op_array_dtor(zend_op_array *op_array);
+
+/* const_closures.c: the closures in the constant expressions of an op array or of a class */
+#if PHP_VERSION_ID >= 80500
+TC_LOCAL void tc_process_op_array_closures(zend_op_array *op_array);
+TC_LOCAL void tc_process_class_closures(zend_class_entry *ce);
+#else
+# define tc_process_op_array_closures(op_array)
+# define tc_process_class_closures(ce)
+#endif
 
 /* paths.c: the settings that select the files */
 TC_LOCAL void tc_paths_activate(void);
