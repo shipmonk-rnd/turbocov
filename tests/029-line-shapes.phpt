@@ -41,13 +41,7 @@ $report = static function (string $label, callable $call): void {
 };
 
 echo "PHP reaches the line, the report has it as not executed:\n";
-$report('return_type_error +1', static fn () => return_type_error());
-$report('missing_return +2', static fn () => missing_return(1));
-$report('return_in_try +2', static fn () => return_in_try());
-$report('break_in_try +3', static fn () => break_in_try([1]));
-$report('empty_try +2', static fn () => empty_try());
 $report('class_declaration +2', static fn () => class_declaration());
-$report('anonymous_class +1', static fn () => anonymous_class());
 $report('call_end +3', static fn () => call_end());
 
 echo "PHP cannot reach the line, the report has it as executed or as executable:\n";
@@ -67,6 +61,12 @@ echo "The condition of the first arm has the line of \"match\", so the arm is no
 $report('first_arm +2', static fn () => first_arm(0));
 
 echo "The report is exact:\n";
+$report('return_type_error +1', static fn () => return_type_error());
+$report('missing_return +2', static fn () => missing_return(1));
+$report('return_in_try +2', static fn () => return_in_try());
+$report('break_in_try +3', static fn () => break_in_try([1]));
+$report('empty_try +2', static fn () => empty_try());
+$report('anonymous_class +1', static fn () => anonymous_class());
 $report('closure_end +5', static fn () => closure_end());
 $report('immediate_call +3', static fn () => immediate_call());
 
@@ -75,24 +75,24 @@ $report('not_listed +1 +2 +4 +7', static fn () => not_listed(1));
 ?>
 --EXPECT--
 PHP reaches the line, the report has it as not executed:
-return_type_error +1, throws TypeError: +1 not executed
-missing_return +2, throws TypeError: +1 executed, +2 not executed
-return_in_try +2, throws RuntimeException: +2 not executed, +4 executed
-break_in_try +3, throws RuntimeException: +1 executed, +3 not executed, +5 executed, +8 not executed
-empty_try +2, throws RuntimeException: +2 not executed, +3 executed, +5 not executed
 class_declaration +2, returns: +2 not executed, +3 executed, +4 executed, +6 not executed
-anonymous_class +1, throws Error: +1 not executed
 call_end +3, throws RuntimeException: +1 executed, +2 executed, +3 not executed
 PHP cannot reach the line, the report has it as executed or as executable:
 duplicate_arm +4, returns: +1 executed, +2 executed, +3 not executed, +4 executed, +6 executed
 after_never +2, throws RuntimeException: +1 executed, +2 not executed
-after_finally +6, throws RuntimeException: +2 executed, +3 not executed, +4 executed, +6 not executed
+after_finally +6, throws RuntimeException: +2 executed, +3 executed, +4 executed, +6 not executed
 PHP starts the line and does not run its main part:
 assertion +1, returns: +1 not executed, +2 executed
 one_line +0, throws TypeError: +0 not executed
 The condition of the first arm has the line of "match", so the arm is not executed when PHP compares it:
 first_arm +2, returns: +1 executed, +2 not executed, +3 executed, +4 executed, +5 not executed
 The report is exact:
+return_type_error +1, throws TypeError: +1 executed
+missing_return +2, throws TypeError: +1 executed, +2 executed
+return_in_try +2, throws RuntimeException: +2 executed, +4 executed
+break_in_try +3, throws RuntimeException: +1 executed, +3 executed, +5 executed, +8 not executed
+empty_try +2, throws RuntimeException: +2 executed, +3 executed, +5 not executed
+anonymous_class +1, throws Error: +1 executed
 closure_end +5, throws RuntimeException: +1 executed, +2 executed, +3 executed, +5 not executed, +6 executed
 immediate_call +3, returns: +1 executed, +2 executed, +3 executed
 A line with only a parameter, a constant argument or a global statement is not an executable line:
