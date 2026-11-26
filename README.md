@@ -57,7 +57,7 @@ php -d turbocov.collect_paths=@changed.txt vendor/bin/phpunit --coverage-clover 
 
 Execution of unlisted files has **zero overhead**!
 
-<sub>This is handy for [GitLab coverage vizualization](https://docs.gitlab.com/ci/testing/code_coverage/#coverage-visualization) or [**Coverage Guard** rules in your CI](https://github.com/shipmonk-rnd/coverage-guard)</sub>
+<sub>This is handy for [GitLab coverage visualization](https://docs.gitlab.com/ci/testing/code_coverage/#coverage-visualization) or [**Coverage Guard** rules in your CI](https://github.com/shipmonk-rnd/coverage-guard)</sub>
 
 ## Requirements
 
@@ -91,6 +91,9 @@ PCOV and Xdebug do work for each instruction that PHP executes. turbocov does wo
 5. `stop()` arms the fired probes again. The cost of a test run is in proportion to the number of lines that the test touched.
 
 turbocov does not replace the instruction loop of PHP. Code without probes runs as if the extension is not loaded.
+
+### Slides
+- The later part of [these slides](https://janedbal.cz/talks/slides/turbocov-coverage-guard/) explains how the extension works more visually
 
 ## API Functions
 

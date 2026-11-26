@@ -67,6 +67,9 @@ $report('SkippedOperands\\function_call left', static fn () => SkippedOperands\f
 $report('fallback_throw left', static fn () => fallback_throw('a'));
 $report('multi_line_else then', static fn () => multi_line_else(true, 2));
 $report('inner_ternary left', static fn () => inner_ternary('a', true));
+$report('match_callee first', static fn () => match_callee(1));
+$report('method_name left', static fn () => method_name(new ArrayObject([]), 'count'));
+$report('static_method_name left', static fn () => static_method_name('getLastErrors'));
 
 echo "Lines with other code after the skipped operand stay reported:\n";
 $report('break_after then', static fn () => break_after(true));
@@ -85,6 +88,9 @@ $report('call_after left', static fn () => call_after('a'));
 $report('next_argument left', static fn () => next_argument(1, 2, 3));
 $report('assignment_line left', static fn () => assignment_line('a'));
 $report('SkippedOperands\\next_argument left', static fn () => SkippedOperands\next_argument(1, 2, 3));
+$report('callee_argument left', static fn () => callee_argument('strtoupper', 'x'));
+$report('method_name_argument left', static fn () => method_name_argument(new ArrayObject([]), 'offsetExists', 1));
+$report('method_of_result left', static fn () => method_of_result(new ArrayObject([]), null));
 
 // Before PHP 8.5, "!X" and "X == false" have the same opcode, and "(bool) X" and "X == true" too. The line then stays reported.
 $expected = PHP_VERSION_ID >= 80500 ? 'not lines +2' : 'all lines';
@@ -127,6 +133,9 @@ SkippedOperands\function_call left: not lines +2
 fallback_throw left: not lines +2
 multi_line_else then: not lines +4 +5
 inner_ternary left: not lines +2 +3 +4
+match_callee first: not lines +3
+method_name left: not lines +2
+static_method_name left: not lines +2
 Lines with other code after the skipped operand stay reported:
 break_after then: all lines
 operand_after left: all lines
@@ -144,5 +153,8 @@ call_after left: all lines
 next_argument left: all lines
 assignment_line left: all lines
 SkippedOperands\next_argument left: all lines
+callee_argument left: all lines
+method_name_argument left: all lines
+method_of_result left: all lines
 negation first: correct for this PHP version
 bool_cast left: correct for this PHP version
