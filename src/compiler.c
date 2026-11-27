@@ -215,6 +215,7 @@ static tc_unit *tc_install_probes(zend_op_array *op_array, tc_file *file)
 	unit->opcodes = op_array->opcodes;
 	unit->file = file;
 	unit->last = op_array->last;
+	unit->shared = op_array->refcount == NULL;
 	unit->index = pecalloc(op_array->last, sizeof(uint32_t), 1);
 	unit->probes = pecalloc(op_array->last, sizeof(tc_probe), 1);
 
@@ -501,32 +502,56 @@ static zend_op_array *tc_compile_string(zend_string *source_string, const char *
 	return op_array;
 }
 
-/* The engine calls this function after it freed the opcodes. Only the address is still valid. */
-void tc_op_array_dtor(zend_op_array *op_array)
+/* A unit with recorded hits stays until the next clear, because collect needs its lines. */
+static void tc_unit_retire(tc_unit *unit)
 {
-	tc_unit *unit = op_array->reserved[tc_slot];
-
-	if ((uintptr_t) unit <= (uintptr_t) TC_NO_PROBES) {
-		return;
-	}
-
-	/* ext-parallel copies op arrays to its threads together with the slot. The unit belongs to the owner thread. */
-	if (!tc_thread_is_owner()) {
-		return;
-	}
-
-	op_array->reserved[tc_slot] = NULL;
-
-	if (tc_active) {
-		zend_hash_index_del(&tc_units, (zend_ulong) (uintptr_t) unit->opcodes);
-	}
-
 	unit->opcodes = NULL;
 
-	/* A unit with recorded hits stays until the next clear, because collect needs its lines. */
 	if (unit->pending == 0) {
 		tc_unit_free(unit);
 	}
+}
+
+/*
+ * The engine calls this function one time for each opcode array, after it freed the opcodes. Only the address is still valid.
+ * The op array that comes here is the last copy. It can be a copy that has no unit in its slot:
+ * a closure object that adopted the code gets the unit, and the op array that the closure came from does not.
+ * Thus the address finds the unit, and not the slot.
+ */
+void tc_op_array_dtor(zend_op_array *op_array)
+{
+	zend_ulong key = (zend_ulong) (uintptr_t) op_array->opcodes;
+	tc_unit *unit;
+
+	/* ext-parallel destroys its copies of the op arrays on its threads. The table belongs to the owner thread. */
+	if (!tc_installed || !tc_thread_is_owner()) {
+		return;
+	}
+
+	unit = zend_hash_index_find_ptr(&tc_units, key);
+
+	if (unit) {
+		zend_hash_index_del(&tc_units, key);
+		tc_unit_retire(unit);
+	}
+}
+
+/*
+ * The engine does not call the destructor for each op array: at the end of a request it can discard the memory of all of them at once.
+ * This function runs after that. The opcodes of each unit that is still in the table are gone.
+ * Code in the shared memory of OPcache is the exception. It stays, and its slot keeps the unit.
+ */
+void tc_units_purge(void)
+{
+	tc_unit *unit;
+
+	ZEND_HASH_FOREACH_PTR(&tc_units, unit) {
+		if (!unit->shared) {
+			tc_unit_retire(unit);
+		}
+	} ZEND_HASH_FOREACH_END();
+
+	zend_hash_clean(&tc_units);
 }
 
 /*
@@ -537,6 +562,7 @@ void tc_install(void)
 {
 	zend_op probe_op;
 
+	zend_hash_init(&tc_units, 256, NULL, NULL, 1);
 	tc_register_handlers();
 
 	/* While the handlers are registered, every opcode gets the ZEND_USER_OPCODE handler. This is the value that a probe needs. */
@@ -555,7 +581,6 @@ void tc_install(void)
 void tc_compiler_activate(void)
 {
 	zend_hash_init(&tc_files, 256, NULL, tc_files_dtor, 1);
-	zend_hash_init(&tc_units, 256, NULL, NULL, 1);
 
 	/*
 	 * A switch with a jump table does not run the comparison of each case. PCOV turns jump tables off too.
@@ -564,8 +589,15 @@ void tc_compiler_activate(void)
 	CG(compiler_options) |= ZEND_COMPILE_NO_JUMPTABLES;
 }
 
+/* The table of units stays: the engine destroys the op arrays after this point, and their destructor needs the table. */
 void tc_compiler_deactivate(void)
 {
-	zend_hash_destroy(&tc_units);
 	zend_hash_destroy(&tc_files);
+}
+
+void tc_uninstall(void)
+{
+	tc_unregister_handlers();
+	zend_hash_destroy(&tc_units);
+	tc_installed = false;
 }

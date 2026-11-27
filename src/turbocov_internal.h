@@ -87,6 +87,7 @@ typedef struct _tc_unit {
 	tc_probe *probes;
 	uint32_t count;
 	uint32_t pending; /* number of references from tc_hits and tc_strays */
+	bool shared; /* the opcodes are in the shared memory of OPcache, and the engine never destroys them */
 } tc_unit;
 
 typedef struct _tc_ref {
@@ -140,6 +141,8 @@ TC_LOCAL extern zend_ulong tc_stat_jump_table_files;
 
 TC_LOCAL void tc_fill_ignored_opcodes(void);
 TC_LOCAL void tc_install(void);
+TC_LOCAL void tc_uninstall(void);
+TC_LOCAL void tc_units_purge(void);
 TC_LOCAL void tc_compiler_activate(void);
 TC_LOCAL void tc_compiler_deactivate(void);
 TC_LOCAL bool tc_adopt_op_array(zend_op_array *op_array, const zend_op *opline);

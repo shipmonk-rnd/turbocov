@@ -145,6 +145,7 @@ PHP_NAMED_FUNCTION(tc_function_get_status)
 	add_assoc_long(return_value, "installed_probes", (zend_long) tc_stat_probes);
 	add_assoc_long(return_value, "fired_probes", (zend_long) tc_stat_fires);
 	add_assoc_long(return_value, "jump_table_files", (zend_long) tc_stat_jump_table_files);
+	add_assoc_long(return_value, "live_units", tc_installed ? (zend_long) zend_hash_num_elements(&tc_units) : 0);
 }
 /* }}} */
 

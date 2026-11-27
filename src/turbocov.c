@@ -80,7 +80,7 @@ static PHP_MINIT_FUNCTION(turbocov)
 static PHP_MSHUTDOWN_FUNCTION(turbocov)
 {
 	if (tc_installed) {
-		tc_unregister_handlers();
+		tc_uninstall();
 	}
 
 	UNREGISTER_INI_ENTRIES();
@@ -142,7 +142,7 @@ static PHP_RSHUTDOWN_FUNCTION(turbocov)
 		return SUCCESS;
 	}
 
-	/* The engine destroys the op arrays after this point. The op array destructor then frees each unit. */
+	/* The engine destroys the op arrays after this point. The op array destructor and tc_post_deactivate() then free the units. */
 	tc_active = false;
 	tc_collecting = false;
 
@@ -152,6 +152,16 @@ static PHP_RSHUTDOWN_FUNCTION(turbocov)
 
 	tc_compiler_deactivate();
 	tc_paths_deactivate();
+
+	return SUCCESS;
+}
+
+/* The engine calls this function after it destroyed or discarded the code of the request. */
+static zend_result tc_post_deactivate(void)
+{
+	if (tc_installed && tc_thread_is_owner()) {
+		tc_units_purge();
+	}
 
 	return SUCCESS;
 }
@@ -185,7 +195,9 @@ zend_module_entry turbocov_module_entry = {
 	PHP_RSHUTDOWN(turbocov),
 	PHP_MINFO(turbocov),
 	PHP_TURBOCOV_VERSION,
-	STANDARD_MODULE_PROPERTIES
+	NO_MODULE_GLOBALS,
+	tc_post_deactivate,
+	STANDARD_MODULE_PROPERTIES_EX
 };
 
 #ifdef COMPILE_DL_TURBOCOV
